@@ -43,6 +43,6 @@ fn handle_message(client: &IrcClient, message: Message, handler: &handler::Handl
         };
 
         let target = message.response_target().unwrap_or(target);
-        client.send_notice(target, &result).unwrap();
+        client.send_privmsg(target, &result).unwrap();
     }
 }
