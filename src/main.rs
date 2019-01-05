@@ -44,6 +44,10 @@ fn handle_message(
     };
 
     let user = message.source_nickname().unwrap();
+    if config.bot_settings.blacklisted_users.contains(&user.into()) {
+        return;
+    }
+
     if let Some(command) = handler::Command::try_parse(user, msg) {
         let result = match handler.handle(command, config) {
             Ok(response) => response,

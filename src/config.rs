@@ -15,6 +15,7 @@ pub struct Config {
 #[derive(Deserialize)]
 pub struct BotSettings {
     pub admins: Vec<String>,
+    pub blacklisted_users: Vec<String>,
 }
 
 impl Config {
