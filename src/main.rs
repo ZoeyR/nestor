@@ -13,7 +13,7 @@ fn main() {
     let db = database::Db::open("rustbot.sqlite").unwrap();
     let mut handler = handler::Handler::new(db);
     handler.register_default(commands::user_defined);
-    handler.register("learn", commands::learn);
+    handler.register("~learn", commands::learn);
 
     let config = Config::load("irc.config.toml").unwrap();
 
@@ -36,8 +36,12 @@ fn handle_message(client: &IrcClient, message: Message, handler: &handler::Handl
     };
 
     let user = message.source_nickname().unwrap();
-    if let Some(command) = handler::Command::try_parse(msg) {
-        let result = handler.handle(command);
+    if let Some(command) = handler::Command::try_parse(user, msg) {
+        let result = match handler.handle(command) {
+            Ok(response) => response,
+            Err(_err) => format!("unexpected error when executing command"),
+        };
+
         let target = message.response_target().unwrap_or(target);
         client.send_notice(target, &result).unwrap();
     }

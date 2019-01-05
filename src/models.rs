@@ -1,14 +1,15 @@
 use crate::schema::factoids;
 
-#[derive(Queryable)]
+#[derive(Queryable, Identifiable)]
 pub struct Factoid {
-    pub label: String,
+    pub id: String,
     pub description: String,
+    pub locked: bool,
 }
 
 #[derive(Insertable)]
 #[table_name = "factoids"]
 pub struct NewFactoid<'a> {
-    pub label: &'a str,
+    pub id: &'a str,
     pub description: &'a str,
 }

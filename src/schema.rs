@@ -1,6 +1,7 @@
 table! {
-    factoids (label) {
-        label -> Text,
+    factoids (id) {
+        id -> Text,
         description -> Text,
+        locked -> Bool,
     }
 }

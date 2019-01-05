@@ -15,38 +15,22 @@ impl Db {
         Ok(Db { connection })
     }
 
-    pub fn get_factoid(&self, factoid: &str) -> Result<String, Error> {
+    pub fn get_factoid(&self, factoid: &str) -> Result<Option<String>, Error> {
         use crate::schema::factoids::dsl::*;
 
-        let results = factoids
-            .filter(label.eq(factoid))
-            .limit(1)
-            .load::<Factoid>(&self.connection)?;
+        let factoid = factoids
+            .find(factoid)
+            .first::<Factoid>(&self.connection)
+            .optional()?;
 
-        Ok(results
-            .into_iter()
-            .map(|f| f.description)
-            .nth(0)
-            .unwrap_or(format!("no factoid: {}", factoid)))
+        Ok(factoid.map(|f| f.description))
     }
 
-    pub fn create_factoid(&self, factoid: &str, description: &str) -> Result<String, Error> {
+    pub fn create_factoid(&self, factoid: &str, description: &str) -> Result<(), Error> {
         use crate::schema::factoids;
 
-        let results = factoids::table
-            .filter(factoids::label.eq(factoid))
-            .limit(1)
-            .load::<Factoid>(&self.connection)?;
-
-        if !results.is_empty() {
-            return Ok(format!(
-                "cannot replace factoid {} since it already exists",
-                factoid
-            ));
-        }
-
         let new_factoid = NewFactoid {
-            label: factoid,
+            id: factoid,
             description,
         };
 
@@ -54,6 +38,34 @@ impl Db {
             .values(&new_factoid)
             .execute(&self.connection)?;
 
-        Ok(format!("learned factoid '{}'", factoid))
+        Ok(())
+    }
+
+    pub fn lock_factoid(&self, factoid: &str) -> Result<(), Error> {
+        use crate::schema::factoids;
+
+        let factoid = factoids::table
+            .find(factoid)
+            .first::<Factoid>(&self.connection)?;
+
+        diesel::update(&factoid)
+            .set(factoids::locked.eq(true))
+            .execute(&self.connection)?;
+
+        Ok(())
+    }
+
+    pub fn unlock_factoid(&self, factoid: &str) -> Result<(), Error> {
+        use crate::schema::factoids;
+
+        let factoid = factoids::table
+            .find(factoid)
+            .first::<Factoid>(&self.connection)?;
+
+        diesel::update(&factoid)
+            .set(factoids::locked.eq(false))
+            .execute(&self.connection)?;
+
+        Ok(())
     }
 }
