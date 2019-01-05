@@ -1,16 +1,21 @@
+use crate::config::Config;
 use crate::database::Db;
 use crate::handler::Command;
 use failure::Error;
 
-pub fn user_defined(command: Command, db: &Db) -> Result<String, Error> {
+pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<String, Error> {
     Ok(match db.get_factoid(command.command_str)? {
         Some(factoid) => factoid,
         None => format!("unknown factoid '{}'", command.command_str),
     })
 }
 
-pub fn learn(command: Command, db: &Db) -> Result<String, Error> {
-    if command.source_nick != "dgriffen" {
+pub fn learn(command: Command, config: &Config, db: &Db) -> Result<String, Error> {
+    if !config
+        .bot_settings
+        .admins
+        .contains(&command.source_nick.into())
+    {
         return Ok(format!("{}", "Shoo! I'm testing this right now"));
     }
 

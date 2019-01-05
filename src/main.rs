@@ -4,6 +4,7 @@ extern crate diesel;
 use irc::client::prelude::*;
 
 mod commands;
+mod config;
 mod database;
 mod handler;
 mod models;
@@ -15,20 +16,27 @@ fn main() {
     handler.register_default(commands::user_defined);
     handler.register("~learn", commands::learn);
 
-    let config = Config::load("irc.config.toml").unwrap();
+    let config = config::Config::load("irc.config.toml").unwrap();
 
     let mut reactor = IrcReactor::new().unwrap();
-    let client = reactor.prepare_client_and_connect(&config).unwrap();
+    let client = reactor
+        .prepare_client_and_connect(&config.irc_config)
+        .unwrap();
     client.identify().unwrap();
     reactor.register_client_with_handler(client, move |client, message| {
-        handle_message(client, message, &handler);
+        handle_message(client, message, &config, &handler);
         Ok(())
     });
 
     reactor.run().unwrap();
 }
 
-fn handle_message(client: &IrcClient, message: Message, handler: &handler::Handler) {
+fn handle_message(
+    client: &IrcClient,
+    message: Message,
+    config: &config::Config,
+    handler: &handler::Handler,
+) {
     println!("{:?}", message);
     let (target, msg) = match message.command {
         Command::PRIVMSG(ref target, ref msg) => (target, msg),
@@ -37,7 +45,7 @@ fn handle_message(client: &IrcClient, message: Message, handler: &handler::Handl
 
     let user = message.source_nickname().unwrap();
     if let Some(command) = handler::Command::try_parse(user, msg) {
-        let result = match handler.handle(command) {
+        let result = match handler.handle(command, config) {
             Ok(response) => response,
             Err(_err) => format!("unexpected error when executing command"),
         };
