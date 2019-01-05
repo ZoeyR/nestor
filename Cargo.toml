@@ -5,3 +5,6 @@ authors = ["Daniel Griffen <daniel@griffen.io>"]
 edition = "2018"
 
 [dependencies]
+irc = "0.13"
+diesel = { version = "1.0", features = ["sqlite"] }
+failure = "0.1"
