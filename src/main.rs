@@ -15,13 +15,8 @@ fn main() {
     handler.register_default(commands::user_defined);
     handler.register("learn", commands::learn);
 
-    let config = Config {
-        nickname: Some("dgriffen_bot".into()),
-        server: Some("irc.mozilla.org".into()),
-        port: Some(6667),
-        channels: Some(vec!["#rust-offtopic".into()]),
-        ..Config::default()
-    };
+    let config = Config::load("irc.config.toml").unwrap();
+
     let mut reactor = IrcReactor::new().unwrap();
     let client = reactor.prepare_client_and_connect(&config).unwrap();
     client.identify().unwrap();
