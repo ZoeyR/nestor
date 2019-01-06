@@ -41,6 +41,24 @@ impl Db {
         Ok(())
     }
 
+    pub fn update_factoid_description(
+        &self,
+        factoid: &str,
+        new_description: &str,
+    ) -> Result<(), Error> {
+        use crate::schema::factoids;
+
+        let factoid = factoids::table
+            .find(factoid)
+            .first::<Factoid>(&self.connection)?;
+
+        diesel::update(&factoid)
+            .set(factoids::description.eq(new_description))
+            .execute(&self.connection)?;
+
+        Ok(())
+    }
+
     pub fn lock_factoid(&self, factoid: &str) -> Result<(), Error> {
         use crate::schema::factoids;
 

@@ -6,7 +6,7 @@ use std::collections::HashMap;
 pub struct Command<'a> {
     pub source_nick: &'a str,
     pub command_str: &'a str,
-    pub argument: &'a str,
+    pub arguments: Vec<&'a str>,
 }
 
 impl<'a> Command<'a> {
@@ -15,12 +15,12 @@ impl<'a> Command<'a> {
             return None;
         }
 
-        let parts: Vec<&str> = message.splitn(2, ' ').collect();
-
+        let mut parts = message.split(' ');
+        let command = parts.next()?;
         Some(Command {
             source_nick: source_nick,
-            command_str: parts[0],
-            argument: parts.get(1).unwrap_or(&""),
+            command_str: command,
+            arguments: parts.collect(),
         })
     }
 }

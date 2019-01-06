@@ -26,3 +26,7 @@ impl Config {
         Ok(conf)
     }
 }
+
+pub fn is_admin(nick: &str, config: &Config) -> bool {
+    config.bot_settings.admins.contains(&nick.into())
+}
