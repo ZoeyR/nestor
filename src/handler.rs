@@ -29,7 +29,7 @@ pub struct Handler {
     db: Db,
     commands:
         HashMap<&'static str, fn(Command, &crate::config::Config, &Db) -> Result<String, Error>>,
-    default: Option<fn(Command, &crate::config::Config, &Db) -> Result<String, Error>>,
+    default: Option<fn(Command, &crate::config::Config, &Db) -> Result<Option<String>, Error>>,
 }
 
 impl Handler {
@@ -51,7 +51,7 @@ impl Handler {
 
     pub fn register_default(
         &mut self,
-        handler: fn(Command, &crate::config::Config, &Db) -> Result<String, Error>,
+        handler: fn(Command, &crate::config::Config, &Db) -> Result<Option<String>, Error>,
     ) {
         self.default = Some(handler);
     }
@@ -60,13 +60,13 @@ impl Handler {
         &self,
         command: Command,
         config: &crate::config::Config,
-    ) -> Result<String, Error> {
+    ) -> Result<Option<String>, Error> {
         if self.commands.contains_key(command.command_str) {
-            self.commands[command.command_str](command, config, &self.db)
+            self.commands[command.command_str](command, config, &self.db).map(|res| Some(res))
         } else if let Some(default) = self.default {
             default(command, config, &self.db)
         } else {
-            Ok(format!("command '{}' not found", command.command_str))
+            Ok(Some(format!("command '{}' not found", command.command_str)))
         }
     }
 }

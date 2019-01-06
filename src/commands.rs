@@ -4,11 +4,15 @@ use crate::database::Db;
 use crate::handler::Command;
 use failure::Error;
 
-pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<String, Error> {
-    Ok(match db.get_factoid(command.command_str)? {
+pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<Option<String>, Error> {
+    if command.arguments.len() > 1 {
+        return Ok(None);
+    }
+
+    Ok(Some(match db.get_factoid(command.command_str)? {
         Some(factoid) => factoid,
         None => format!("unknown factoid '{}'", command.command_str),
-    })
+    }))
 }
 
 pub fn learn(command: Command, config: &Config, db: &Db) -> Result<String, Error> {
