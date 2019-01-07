@@ -29,7 +29,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
         ));
     }
 
-    let actual_factoid = format!("~{}", command.arguments[0]);
+    let actual_factoid = command.arguments[0];
     let existing_factoid = db.get_factoid(&actual_factoid)?;
 
     Ok(match command.arguments[1] {

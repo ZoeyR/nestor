@@ -15,7 +15,7 @@ impl<'a> Command<'a> {
         }
 
         let mut parts = message.split(' ');
-        let command = parts.next()?;
+        let (_, command) = parts.next()?.split_at(1);
         Some(Command {
             source_nick,
             command_str: command,

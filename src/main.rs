@@ -17,7 +17,7 @@ fn main() {
     let db = database::Db::open("rustbot.sqlite").unwrap();
     let mut handler = handler::Handler::new(db);
     handler.register_default(commands::user_defined);
-    handler.register("~learn", commands::learn);
+    handler.register("learn", commands::learn);
 
     let config = config::Config::load("irc.config.toml").unwrap();
 
