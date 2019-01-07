@@ -15,16 +15,15 @@ impl Db {
         Ok(Db { connection })
     }
 
-    pub fn get_factoid(&self, factoid: &str) -> Result<Option<String>, Error> {
+    pub fn get_factoid(&self, key: &str) -> Result<Option<Factoid>, Error> {
         use crate::schema::factoids::dsl::*;
 
-        let factoid = factoids
-            .filter(label.eq(factoid))
+        factoids
+            .filter(label.eq(key))
             .order(timestamp.desc())
             .first::<Factoid>(&self.connection)
-            .optional()?;
-
-        Ok(factoid.map(|f| f.description))
+            .optional()
+            .map_err(From::from)
     }
 
     pub fn create_factoid(

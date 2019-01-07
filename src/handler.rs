@@ -1,4 +1,5 @@
 use crate::database::Db;
+use crate::models::FactoidEnum;
 use failure::Error;
 use std::collections::HashMap;
 
@@ -29,6 +30,16 @@ pub enum Response {
     Act(String),
     Notice(String),
     None,
+}
+
+impl Response {
+    pub fn from_intent(intent: FactoidEnum, message: String) -> Self {
+        match intent {
+            FactoidEnum::Act => Response::Act(message),
+            FactoidEnum::Say => Response::Say(message),
+            _ => Response::None,
+        }
+    }
 }
 
 type MessageHandler = fn(Command, &crate::config::Config, &Db) -> Result<Response, Error>;

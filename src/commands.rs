@@ -13,7 +13,7 @@ pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<Respo
     }
 
     Ok(match db.get_factoid(command.command_str)? {
-        Some(factoid) => Response::Say(factoid),
+        Some(factoid) => Response::from_intent(factoid.intent, factoid.description),
         None => Response::Notice(format!("unknown factoid '{}'", command.command_str)),
     })
 }
@@ -33,13 +33,14 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
     let existing_factoid = db.get_factoid(&actual_factoid)?;
 
     Ok(match command.arguments[1] {
-        "=" => {
-            if existing_factoid.is_some() {
+        "=" => match existing_factoid {
+            Some(ref factoid) if factoid.intent != FactoidEnum::Forget => {
                 Response::Notice(format!(
                     "cannot rewrite '{}' since it already exists.",
                     actual_factoid
                 ))
-            } else {
+            }
+            Some(_) | None => {
                 let description = command.arguments[2..].join(" ");
                 let description = description.trim();
                 db.create_factoid(
@@ -50,7 +51,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
                 )?;
                 Response::Notice(format!("learned factoid: {}", actual_factoid))
             }
-        }
+        },
         ":=" => {
             if existing_factoid.is_some() {
                 Response::Notice(format!(
@@ -76,12 +77,12 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
             if let Some(existing_factoid) = existing_factoid {
                 let description = format!(
                     "{} {}",
-                    existing_factoid,
+                    existing_factoid.description,
                     command.arguments[2..].join(" ").trim()
                 );
                 db.create_factoid(
                     command.source_nick,
-                    FactoidEnum::Say,
+                    existing_factoid.intent,
                     &actual_factoid,
                     &description,
                 )?;
