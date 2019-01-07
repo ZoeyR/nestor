@@ -3,7 +3,7 @@ use crate::schema::factoids;
 use chrono::naive::NaiveDateTime;
 use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSql};
-use diesel::serialize::{self, IsNull, Output, ToSql};
+use diesel::serialize::{self, Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
 use std::io::Write;

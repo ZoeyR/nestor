@@ -13,7 +13,12 @@ pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<Respo
     }
 
     Ok(match db.get_factoid(command.command_str)? {
-        Some(factoid) => Response::from_intent(factoid.intent, factoid.description),
+        Some(factoid) => match factoid.intent {
+            FactoidEnum::Forget => {
+                Response::Notice(format!("unknown factoid '{}'", command.command_str))
+            }
+            _ => Response::from_intent(factoid.intent, factoid.description),
+        },
         None => Response::Notice(format!("unknown factoid '{}'", command.command_str)),
     })
 }
@@ -115,12 +120,60 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
                 Response::Notice(format!("learned factoid: {}", actual_factoid))
             }
         }
-        format @ "~=" | format @ "@=" | format @ "!=" => Response::Notice(format!(
+        "!=" => match existing_factoid {
+            Some(ref factoid) if factoid.intent != FactoidEnum::Forget => {
+                Response::Notice(format!(
+                    "cannot rewrite '{}' since it already exists.",
+                    actual_factoid
+                ))
+            }
+            Some(_) | None => {
+                let description = command.arguments[2..].join(" ");
+                let description = description.trim();
+                db.create_factoid(
+                    command.source_nick,
+                    FactoidEnum::Act,
+                    &actual_factoid,
+                    description,
+                )?;
+                Response::Notice(format!("learned factoid: {}", actual_factoid))
+            }
+        },
+        format @ "~=" | format @ "@=" => Response::Notice(format!(
             "learn format {} is currently unimplemented",
             format
         )),
         _ => Response::Notice(
             "Invalid command format, please use ~learn <factoid> = <description>".into(),
         ),
+    })
+}
+
+pub fn forget(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
+    if !is_admin(command.source_nick, config) {
+        return Ok(Response::Say("Shoo! I'm testing this right now".into()));
+    }
+
+    if command.arguments.len() != 1 {
+        return Ok(Response::Notice(
+            "Invalid command format, please use ~forget <factoid>".into(),
+        ));
+    }
+
+    let actual_factoid = command.arguments[0];
+    Ok(match db.get_factoid(&actual_factoid)? {
+        Some(ref factoid) if factoid.intent != FactoidEnum::Forget => {
+            db.create_factoid(
+                command.source_nick,
+                FactoidEnum::Forget,
+                &factoid.label,
+                &factoid.description,
+            )?;
+            Response::Notice(format!("forgot factoid '{}'", factoid.label))
+        }
+        Some(_) | None => Response::Notice(format!(
+            "cannot forget factoid '{}' because it doesn't exist",
+            actual_factoid
+        )),
     })
 }

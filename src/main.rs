@@ -18,6 +18,7 @@ fn main() {
     let mut handler = handler::Handler::new(db);
     handler.register_default(commands::user_defined);
     handler.register("learn", commands::learn);
+    handler.register("forget", commands::forget);
 
     let config = config::Config::load("irc.config.toml").unwrap();
 
