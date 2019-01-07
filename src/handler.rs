@@ -1,6 +1,5 @@
 use crate::database::Db;
 use failure::Error;
-use irc::client::prelude::*;
 use std::collections::HashMap;
 
 pub struct Command<'a> {
@@ -18,18 +17,26 @@ impl<'a> Command<'a> {
         let mut parts = message.split(' ');
         let command = parts.next()?;
         Some(Command {
-            source_nick: source_nick,
+            source_nick,
             command_str: command,
             arguments: parts.collect(),
         })
     }
 }
 
+pub enum Response {
+    Say(String),
+    Act(String),
+    Notice(String),
+    None,
+}
+
+type MessageHandler = fn(Command, &crate::config::Config, &Db) -> Result<Response, Error>;
+
 pub struct Handler {
     db: Db,
-    commands:
-        HashMap<&'static str, fn(Command, &crate::config::Config, &Db) -> Result<String, Error>>,
-    default: Option<fn(Command, &crate::config::Config, &Db) -> Result<Option<String>, Error>>,
+    commands: HashMap<&'static str, MessageHandler>,
+    default: Option<MessageHandler>,
 }
 
 impl Handler {
@@ -41,18 +48,11 @@ impl Handler {
         }
     }
 
-    pub fn register(
-        &mut self,
-        label: &'static str,
-        handler: fn(Command, &crate::config::Config, &Db) -> Result<String, Error>,
-    ) {
+    pub fn register(&mut self, label: &'static str, handler: MessageHandler) {
         self.commands.insert(label, handler);
     }
 
-    pub fn register_default(
-        &mut self,
-        handler: fn(Command, &crate::config::Config, &Db) -> Result<Option<String>, Error>,
-    ) {
+    pub fn register_default(&mut self, handler: MessageHandler) {
         self.default = Some(handler);
     }
 
@@ -60,13 +60,16 @@ impl Handler {
         &self,
         command: Command,
         config: &crate::config::Config,
-    ) -> Result<Option<String>, Error> {
+    ) -> Result<Response, Error> {
         if self.commands.contains_key(command.command_str) {
-            self.commands[command.command_str](command, config, &self.db).map(|res| Some(res))
+            self.commands[command.command_str](command, config, &self.db)
         } else if let Some(default) = self.default {
             default(command, config, &self.db)
         } else {
-            Ok(Some(format!("command '{}' not found", command.command_str)))
+            Ok(Response::Say(format!(
+                "command '{}' not found",
+                command.command_str
+            )))
         }
     }
 }

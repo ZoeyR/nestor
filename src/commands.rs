@@ -2,28 +2,30 @@ use crate::config::is_admin;
 use crate::config::Config;
 use crate::database::Db;
 use crate::handler::Command;
+use crate::handler::Response;
+use crate::models::FactoidEnum;
+
 use failure::Error;
 
-pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<Option<String>, Error> {
+pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<Response, Error> {
     if command.arguments.len() > 1 {
-        return Ok(None);
+        return Ok(Response::None);
     }
 
-    Ok(Some(match db.get_factoid(command.command_str)? {
-        Some(factoid) => factoid,
-        None => format!("unknown factoid '{}'", command.command_str),
-    }))
+    Ok(match db.get_factoid(command.command_str)? {
+        Some(factoid) => Response::Say(factoid),
+        None => Response::Notice(format!("unknown factoid '{}'", command.command_str)),
+    })
 }
 
-pub fn learn(command: Command, config: &Config, db: &Db) -> Result<String, Error> {
+pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
     if !is_admin(command.source_nick, config) {
-        return Ok(format!("{}", "Shoo! I'm testing this right now"));
+        return Ok(Response::Say("Shoo! I'm testing this right now".into()));
     }
 
     if command.arguments.len() < 3 {
-        return Ok(format!(
-            "{}",
-            "Invalid command format, please use ~learn <factoid> = <description>"
+        return Ok(Response::Notice(
+            "Invalid command format, please use ~learn <factoid> = <description>".into(),
         ));
     }
 
@@ -33,31 +35,41 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<String, Error
     Ok(match command.arguments[1] {
         "=" => {
             if existing_factoid.is_some() {
-                format!(
+                Response::Notice(format!(
                     "cannot rewrite '{}' since it already exists.",
                     actual_factoid
-                )
+                ))
             } else {
                 let description = command.arguments[2..].join(" ");
                 let description = description.trim();
-                db.create_factoid(&actual_factoid, description)?;
-                format!("learned factoid: {}", actual_factoid)
+                db.create_factoid(
+                    command.source_nick,
+                    FactoidEnum::Say,
+                    &actual_factoid,
+                    description,
+                )?;
+                Response::Notice(format!("learned factoid: {}", actual_factoid))
             }
         }
         ":=" => {
             if existing_factoid.is_some() {
-                format!(
+                Response::Notice(format!(
                     "cannot rewrite '{}' since it already exists.",
                     actual_factoid
-                )
+                ))
             } else {
                 let description = format!(
                     "{} is {}",
                     command.arguments[0],
                     command.arguments[2..].join(" ").trim()
                 );
-                db.create_factoid(&actual_factoid, &description)?;
-                format!("learned factoid: {}", actual_factoid)
+                db.create_factoid(
+                    command.source_nick,
+                    FactoidEnum::Say,
+                    &actual_factoid,
+                    &description,
+                )?;
+                Response::Notice(format!("learned factoid: {}", actual_factoid))
             }
         }
         "+=" => {
@@ -67,23 +79,47 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<String, Error
                     existing_factoid,
                     command.arguments[2..].join(" ").trim()
                 );
-                db.update_factoid_description(&actual_factoid, &description)?;
-                format!("learned factoid: {}", actual_factoid)
+                db.create_factoid(
+                    command.source_nick,
+                    FactoidEnum::Say,
+                    &actual_factoid,
+                    &description,
+                )?;
+                Response::Notice(format!("learned factoid: {}", actual_factoid))
             } else {
-                format!("cannot ammend '{}' since it doesn't exist.", actual_factoid)
+                Response::Notice(format!(
+                    "cannot ammend '{}' since it doesn't exist.",
+                    actual_factoid
+                ))
             }
         }
         "f=" => {
             let description = command.arguments[2..].join(" ");
             let description = description.trim();
-            if let Some(existing_factoid) = existing_factoid {
-                db.update_factoid_description(&actual_factoid, &description)?;
-                format!("rewrote factoid: {}", actual_factoid)
+            if let Some(_) = existing_factoid {
+                db.create_factoid(
+                    command.source_nick,
+                    FactoidEnum::Say,
+                    &actual_factoid,
+                    &description,
+                )?;
+                Response::Notice(format!("rewrote factoid: {}", actual_factoid))
             } else {
-                db.create_factoid(&actual_factoid, &description)?;
-                format!("learned factoid: {}", actual_factoid)
+                db.create_factoid(
+                    command.source_nick,
+                    FactoidEnum::Say,
+                    &actual_factoid,
+                    &description,
+                )?;
+                Response::Notice(format!("learned factoid: {}", actual_factoid))
             }
         }
-        "~=" | "@=" | "!=" | _ => format!("{}", "learn format is currently unimplemented"),
+        format @ "~=" | format @ "@=" | format @ "!=" => Response::Notice(format!(
+            "learn format {} is currently unimplemented",
+            format
+        )),
+        _ => Response::Notice(
+            "Invalid command format, please use ~learn <factoid> = <description>".into(),
+        ),
     })
 }

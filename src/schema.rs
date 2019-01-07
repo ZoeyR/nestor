@@ -1,7 +1,11 @@
 table! {
     factoids (id) {
-        id -> Text,
+        id -> Integer,
+        label -> Text,
+        intent -> Text,
         description -> Text,
+        nickname -> Text,
+        timestamp -> Timestamp,
         locked -> Bool,
     }
 }

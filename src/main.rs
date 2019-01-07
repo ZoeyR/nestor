@@ -1,6 +1,9 @@
+#![allow(proc_macro_derive_resolution_fallback)]
+
 #[macro_use]
 extern crate diesel;
 
+use crate::handler::Response;
 use irc::client::prelude::*;
 
 mod commands;
@@ -50,12 +53,16 @@ fn handle_message(
 
     if let Some(command) = handler::Command::try_parse(user, msg) {
         let result = match handler.handle(command, config) {
-            Ok(Some(response)) => response,
-            Ok(None) => return,
-            Err(_err) => format!("unexpected error when executing command"),
+            Ok(response) => response,
+            Err(_err) => handler::Response::Say("unexpected error when executing command".into()),
         };
 
         let target = message.response_target().unwrap_or(target);
-        client.send_privmsg(target, &result).unwrap();
+        match result {
+            Response::Say(message) => client.send_privmsg(target, &message).unwrap(),
+            Response::Act(message) => client.send_action(target, &message).unwrap(),
+            Response::Notice(message) => client.send_notice(target, &message).unwrap(),
+            Response::None => {}
+        }
     }
 }

@@ -22,7 +22,7 @@ impl Config {
     pub fn load(path: impl AsRef<Path>) -> Result<Self, Error> {
         // Load entries via serde
         let conf = fs::read_to_string(path.as_ref())?;
-        let mut conf: Config = toml::de::from_str(&conf)?;
+        let conf: Config = toml::de::from_str(&conf)?;
         Ok(conf)
     }
 }
