@@ -4,6 +4,8 @@ use crate::database::Db;
 use crate::handler::Command;
 use crate::handler::Response;
 use crate::models::FactoidEnum;
+use std::marker::PhantomData;
+use std::ops::Deref;
 
 use failure::Error;
 
@@ -88,118 +90,74 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
     let raw_description = command.arguments[operation_index + 1..].join(" ");
 
     Ok(match operation {
-        "=" => match existing_factoid {
-            Some(ref factoid) if factoid.intent != FactoidEnum::Forget => {
-                Response::Notice(format!(
-                    "cannot rewrite '{}' since it already exists.",
-                    actual_factoid
-                ))
-            }
-            Some(_) | None => {
-                let description = raw_description.trim();
-                db.create_factoid(
-                    command.source_nick,
-                    FactoidEnum::Say,
-                    &actual_factoid,
-                    description,
-                )?;
-                Response::Notice(format!("learned factoid: {}", actual_factoid))
-            }
-        },
-        ":=" => {
-            if existing_factoid.is_some() {
-                Response::Notice(format!(
-                    "cannot rewrite '{}' since it already exists.",
-                    actual_factoid
-                ))
-            } else {
-                let description = format!("{} is {}", actual_factoid, raw_description);
-                db.create_factoid(
-                    command.source_nick,
-                    FactoidEnum::Say,
-                    &actual_factoid,
-                    &description,
-                )?;
-                Response::Notice(format!("learned factoid: {}", actual_factoid))
-            }
-        }
-        "+=" => {
-            if let Some(existing_factoid) = existing_factoid {
-                let description = format!(
-                    "{} {}",
-                    existing_factoid.description,
-                    raw_description.trim()
-                );
-                db.create_factoid(
-                    command.source_nick,
-                    existing_factoid.intent,
-                    &actual_factoid,
-                    &description,
-                )?;
-                Response::Notice(format!("learned factoid: {}", actual_factoid))
-            } else {
-                Response::Notice(format!(
-                    "cannot ammend '{}' since it doesn't exist.",
-                    actual_factoid
-                ))
-            }
-        }
-        "f=" => {
-            let description = raw_description.trim();
-            if let Some(_) = existing_factoid {
-                db.create_factoid(
-                    command.source_nick,
-                    FactoidEnum::Say,
-                    &actual_factoid,
-                    &description,
-                )?;
-                Response::Notice(format!("rewrote factoid: {}", actual_factoid))
-            } else {
-                db.create_factoid(
-                    command.source_nick,
-                    FactoidEnum::Say,
-                    &actual_factoid,
-                    &description,
-                )?;
-                Response::Notice(format!("learned factoid: {}", actual_factoid))
-            }
-        }
-        "!=" => match existing_factoid {
-            Some(ref factoid) if factoid.intent != FactoidEnum::Forget => {
-                Response::Notice(format!(
-                    "cannot rewrite '{}' since it already exists.",
-                    actual_factoid
-                ))
-            }
-            Some(_) | None => {
-                let description = raw_description.trim();
-                db.create_factoid(
-                    command.source_nick,
-                    FactoidEnum::Act,
-                    &actual_factoid,
-                    description,
-                )?;
-                Response::Notice(format!("learned factoid: {}", actual_factoid))
-            }
-        },
-        "@=" => match existing_factoid {
-            Some(ref factoid) if factoid.intent != FactoidEnum::Forget => {
-                Response::Notice(format!(
-                    "cannot rewrite '{}' since it already exists.",
-                    actual_factoid
-                ))
-            }
-            Some(_) | None => {
-                let description = raw_description.trim();
-                db.create_factoid(
-                    command.source_nick,
-                    FactoidEnum::Alias,
-                    &actual_factoid,
-                    description,
-                )?;
-                Response::Notice(format!("learned factoid: {}", actual_factoid))
-            }
-        },
+        "=" => learn_helper(
+            command.source_nick,
+            &actual_factoid,
+            existing_factoid,
+            db,
+            FactoidEnum::Say,
+            EditOptions::MustNot(
+                || raw_description.trim(),
+                PhantomData::<fn(&crate::models::Factoid) -> String>,
+            ),
+        )?,
+        ":=" => learn_helper(
+            command.source_nick,
+            &actual_factoid,
+            existing_factoid,
+            db,
+            FactoidEnum::Say,
+            EditOptions::MustNot(
+                || format!("{} is {}", actual_factoid, raw_description),
+                PhantomData::<fn(&crate::models::Factoid) -> String>,
+            ),
+        )?,
+        "+=" => learn_helper(
+            command.source_nick,
+            &actual_factoid,
+            existing_factoid,
+            db,
+            FactoidEnum::Say,
+            EditOptions::Must(
+                |factoid: &crate::models::Factoid| {
+                    format!("{} {}", factoid.description, raw_description.trim())
+                },
+                PhantomData::<fn() -> String>,
+            ),
+        )?,
+        "f=" => learn_helper(
+            command.source_nick,
+            &actual_factoid,
+            existing_factoid,
+            db,
+            FactoidEnum::Say,
+            EditOptions::Optional(
+                |_: &crate::models::Factoid| raw_description.trim(),
+                || raw_description.trim(),
+            ),
+        )?,
+        "!=" => learn_helper(
+            command.source_nick,
+            &actual_factoid,
+            existing_factoid,
+            db,
+            FactoidEnum::Act,
+            EditOptions::MustNot(
+                || raw_description.trim(),
+                PhantomData::<fn(&crate::models::Factoid) -> String>,
+            ),
+        )?,
+        "@=" => learn_helper(
+            command.source_nick,
+            &actual_factoid,
+            existing_factoid,
+            db,
+            FactoidEnum::Alias,
+            EditOptions::MustNot(
+                || raw_description.trim(),
+                PhantomData::<fn(&crate::models::Factoid) -> String>,
+            ),
+        )?,
         format @ "~=" => Response::Notice(format!(
             "learn format {} is currently unimplemented",
             format
@@ -207,6 +165,51 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
         _ => Response::Notice(
             "Invalid command format, please use ~learn <factoid> = <description>".into(),
         ),
+    })
+}
+
+enum EditOptions<E, F> {
+    Must(E, PhantomData<F>),
+    MustNot(F, PhantomData<E>),
+    Optional(E, F),
+}
+
+fn learn_helper<E, F, T, G>(
+    nick: &str,
+    label: &str,
+    mut factoid: Option<crate::models::Factoid>,
+    db: &Db,
+    intent: FactoidEnum,
+    editor: EditOptions<E, F>,
+) -> Result<Response, Error>
+where
+    E: for<'factoid> Fn(&'factoid crate::models::Factoid) -> G,
+    F: Fn() -> T,
+    T: Deref<Target = str>,
+    G: Deref<Target = str>,
+{
+    if let Some(FactoidEnum::Forget) = factoid.as_ref().map(|f| &f.intent) {
+        factoid = None;
+    }
+
+    Ok(match (factoid, editor) {
+        (None, EditOptions::MustNot(fresh, _)) | (None, EditOptions::Optional(_, fresh)) => {
+            db.create_factoid(nick, intent, label, &fresh())?;
+            Response::Notice(format!("learned factoid: '{}'.", label))
+        }
+        (None, EditOptions::Must(_, _)) => {
+            Response::Notice(format!("cannot edit: '{}'. Factoid does not exist.", label))
+        }
+        (Some(_), EditOptions::MustNot(_, _)) => Response::Notice(format!(
+            "cannot rewrite '{}' since it already exists.",
+            label
+        )),
+        (Some(factoid), EditOptions::Must(editor, _))
+        | (Some(factoid), EditOptions::Optional(editor, _)) => {
+            let description = editor(&factoid);
+            db.create_factoid(nick, factoid.intent, &label, &description)?;
+            Response::Notice(format!("edited factoid: '{}'.", label))
+        }
     })
 }
 
