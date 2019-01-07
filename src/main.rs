@@ -55,7 +55,10 @@ fn handle_message(
     if let Some(command) = handler::Command::try_parse(user, msg) {
         let result = match handler.handle(command, config) {
             Ok(response) => response,
-            Err(_err) => handler::Response::Say("unexpected error when executing command".into()),
+            Err(err) => {
+                println!("{:?}", err);
+                handler::Response::Say("unexpected error when executing command".into())
+            }
         };
 
         let target = message.response_target().unwrap_or(target);
