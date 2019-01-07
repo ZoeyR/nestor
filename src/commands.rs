@@ -17,10 +17,30 @@ pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<Respo
             FactoidEnum::Forget => {
                 Response::Notice(format!("unknown factoid '{}'", command.command_str))
             }
+            FactoidEnum::Alias => process_alias(factoid, db)?,
             _ => Response::from_intent(factoid.intent, factoid.description),
         },
         None => Response::Notice(format!("unknown factoid '{}'", command.command_str)),
     })
+}
+
+fn process_alias(mut factoid: crate::models::Factoid, db: &Db) -> Result<Response, Error> {
+    for _ in 0..3 {
+        match factoid.intent {
+            FactoidEnum::Alias => match db.get_factoid(&factoid.description)? {
+                Some(next_level) => factoid = next_level,
+                None => {
+                    return Ok(Response::Notice(format!(
+                        "unknown factoid '{}'",
+                        factoid.description
+                    )))
+                }
+            },
+            _ => return Ok(Response::from_intent(factoid.intent, factoid.description)),
+        }
+    }
+
+    Ok(Response::Notice("alias depth too deep".into()))
 }
 
 pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
@@ -139,7 +159,26 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
                 Response::Notice(format!("learned factoid: {}", actual_factoid))
             }
         },
-        format @ "~=" | format @ "@=" => Response::Notice(format!(
+        "@=" => match existing_factoid {
+            Some(ref factoid) if factoid.intent != FactoidEnum::Forget => {
+                Response::Notice(format!(
+                    "cannot rewrite '{}' since it already exists.",
+                    actual_factoid
+                ))
+            }
+            Some(_) | None => {
+                let description = command.arguments[2..].join(" ");
+                let description = description.trim();
+                db.create_factoid(
+                    command.source_nick,
+                    FactoidEnum::Alias,
+                    &actual_factoid,
+                    description,
+                )?;
+                Response::Notice(format!("learned factoid: {}", actual_factoid))
+            }
+        },
+        format @ "~=" => Response::Notice(format!(
             "learn format {} is currently unimplemented",
             format
         )),
