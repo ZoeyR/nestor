@@ -16,13 +16,19 @@ pub struct Command<'a> {
 }
 
 impl<'a> Command<'a> {
-    pub fn try_parse(source_nick: &'a str, message: &'a str) -> Option<Command<'a>> {
-        if !message.starts_with('~') {
+    pub fn try_parse(
+        source_nick: &'a str,
+        message: &'a str,
+        config: &Config,
+    ) -> Option<Command<'a>> {
+        if !message.starts_with(&config.bot_settings.command_indicator) {
             return None;
         }
 
         let mut parts = message.split(' ');
-        let (_, command) = parts.next()?.split_at(1);
+        let (_, command) = parts
+            .next()?
+            .split_at(config.bot_settings.command_indicator.len());
         Some(Command {
             source_nick,
             command_str: command,
@@ -99,7 +105,7 @@ pub fn handle_message(client: &IrcClient, message: Message, config: &Config, han
         return;
     }
 
-    if let Some(command) = Command::try_parse(user, msg) {
+    if let Some(command) = Command::try_parse(user, msg, config) {
         let result = match handler.handle(command, config) {
             Ok(response) => response,
             Err(err) => {

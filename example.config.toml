@@ -1,0 +1,29 @@
+[connection]
+owners = []
+nickname = "user"
+nick_password = "password"
+alt_nicks = ["user_", "user__"]
+username = "user"
+realname = "Test User"
+server = "irc.mozilla.org"
+port = 6697
+password = ""
+use_ssl = true
+encoding = "UTF-8"
+channels = ["#rust"]
+user_info = "I. AM. A. ROBOT."
+version = "0.1"
+source = "https://github.com/dgriffen/rustbot"
+ping_time = 180
+ping_timeout = 10
+burst_window_length = 8
+max_messages_in_burst = 15
+should_ghost = false
+ghost_sequence = []
+
+[bot]
+admins = ["user"]
+blacklisted_users = ["bad_user"]
+database_url = "rustybot.sqlite"
+command_indicator = "!"
+alias_depth = 3

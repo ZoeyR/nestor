@@ -3,9 +3,11 @@
 #[macro_use]
 extern crate diesel;
 
+use crate::config::{Args, Config};
 use crate::handler::{handle_message, Response};
 
 use irc::client::prelude::*;
+use structopt::StructOpt;
 
 mod commands;
 mod config;
@@ -13,13 +15,14 @@ mod database;
 mod handler;
 
 fn main() {
-    let db = database::Db::open("rustbot.sqlite").unwrap();
+    let args = Args::from_args();
+    let config = config::Config::load(args.config).unwrap();
+
+    let db = database::Db::open(&config.bot_settings.database_url).unwrap();
     let mut handler = handler::Handler::new(db);
     handler.register_default(commands::user_defined);
     handler.register("learn", commands::learn);
     handler.register("forget", commands::forget);
-
-    let config = config::Config::load("irc.config.toml").unwrap();
 
     let mut reactor = IrcReactor::new().unwrap();
     let client = reactor

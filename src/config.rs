@@ -1,9 +1,10 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use failure::Error;
 use irc::client::data::Config as IrcConfig;
 use serde::Deserialize;
+use structopt::StructOpt;
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -17,6 +18,9 @@ pub struct Config {
 pub struct BotSettings {
     pub admins: Vec<String>,
     pub blacklisted_users: Vec<String>,
+    pub database_url: String,
+    pub command_indicator: String,
+    pub alias_depth: u32,
 }
 
 impl Config {
@@ -30,4 +34,15 @@ impl Config {
 
 pub fn is_admin(nick: &str, config: &Config) -> bool {
     config.bot_settings.admins.contains(&nick.into())
+}
+
+#[derive(StructOpt)]
+pub struct Args {
+    #[structopt(
+        short = "c",
+        long = "config",
+        parse(from_os_str),
+        default_value = "irc.config.toml"
+    )]
+    pub config: PathBuf,
 }
