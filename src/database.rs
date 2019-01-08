@@ -1,9 +1,12 @@
-use crate::models::*;
+use self::models::{Factoid, FactoidEnum, NewFactoid};
 
 use chrono::offset::Utc;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use failure::Error;
+
+pub mod models;
+pub mod schema;
 
 pub struct Db {
     connection: SqliteConnection,
@@ -17,7 +20,7 @@ impl Db {
     }
 
     pub fn get_factoid(&self, key: &str) -> Result<Option<Factoid>, Error> {
-        use crate::schema::factoids::dsl::*;
+        use self::schema::factoids::dsl::*;
 
         factoids
             .filter(label.eq(key))
@@ -34,7 +37,7 @@ impl Db {
         factoid: &str,
         description: &str,
     ) -> Result<(), Error> {
-        use crate::schema::factoids;
+        use self::schema::factoids;
 
         let timestamp = Utc::now().naive_utc();
         let new_factoid = NewFactoid {

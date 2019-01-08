@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use crate::schema::factoids;
+use super::schema::factoids;
 
 use chrono::naive::NaiveDateTime;
 use diesel::backend::Backend;

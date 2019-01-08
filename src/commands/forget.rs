@@ -1,9 +1,9 @@
 use crate::config::is_admin;
 use crate::config::Config;
+use crate::database::models::FactoidEnum;
 use crate::database::Db;
 use crate::handler::Command;
 use crate::handler::Response;
-use crate::models::FactoidEnum;
 
 use failure::Error;
 

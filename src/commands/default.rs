@@ -1,8 +1,8 @@
 use crate::config::Config;
+use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
 use crate::handler::Command;
 use crate::handler::Response;
-use crate::models::FactoidEnum;
 
 use failure::Error;
 
@@ -28,7 +28,7 @@ pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<Respo
     })
 }
 
-fn process_alias(mut factoid: crate::models::Factoid, db: &Db) -> Result<Response, Error> {
+fn process_alias(mut factoid: Factoid, db: &Db) -> Result<Response, Error> {
     for _ in 0..3 {
         match factoid.intent {
             FactoidEnum::Alias => match db.get_factoid(&factoid.description)? {

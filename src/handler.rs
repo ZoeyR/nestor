@@ -1,9 +1,13 @@
 use std::collections::HashMap;
 
+use crate::config::Config;
+use crate::database::models::FactoidEnum;
 use crate::database::Db;
-use crate::models::FactoidEnum;
 
 use failure::Error;
+use irc::client::ext::ClientExt;
+use irc::client::IrcClient;
+use irc::proto::Message;
 
 pub struct Command<'a> {
     pub source_nick: &'a str,
@@ -44,7 +48,7 @@ impl Response {
     }
 }
 
-type MessageHandler = fn(Command, &crate::config::Config, &Db) -> Result<Response, Error>;
+type MessageHandler = fn(Command, &Config, &Db) -> Result<Response, Error>;
 
 pub struct Handler {
     db: Db,
@@ -69,11 +73,7 @@ impl Handler {
         self.default = Some(handler);
     }
 
-    pub fn handle(
-        &self,
-        command: Command,
-        config: &crate::config::Config,
-    ) -> Result<Response, Error> {
+    pub fn handle(&self, command: Command, config: &Config) -> Result<Response, Error> {
         if self.commands.contains_key(command.command_str) {
             self.commands[command.command_str](command, config, &self.db)
         } else if let Some(default) = self.default {
@@ -83,6 +83,37 @@ impl Handler {
                 "command '{}' not found",
                 command.command_str
             )))
+        }
+    }
+}
+
+pub fn handle_message(client: &IrcClient, message: Message, config: &Config, handler: &Handler) {
+    println!("{:?}", message);
+    let (target, msg) = match message.command {
+        irc::proto::command::Command::PRIVMSG(ref target, ref msg) => (target, msg),
+        _ => return,
+    };
+
+    let user = message.source_nickname().unwrap();
+    if config.bot_settings.blacklisted_users.contains(&user.into()) {
+        return;
+    }
+
+    if let Some(command) = Command::try_parse(user, msg) {
+        let result = match handler.handle(command, config) {
+            Ok(response) => response,
+            Err(err) => {
+                println!("{:?}", err);
+                Response::Say("unexpected error when executing command".into())
+            }
+        };
+
+        let target = message.response_target().unwrap_or(target);
+        match result {
+            Response::Say(message) => client.send_privmsg(target, &message).unwrap(),
+            Response::Act(message) => client.send_action(target, &message).unwrap(),
+            Response::Notice(message) => client.send_notice(target, &message).unwrap(),
+            Response::None => {}
         }
     }
 }

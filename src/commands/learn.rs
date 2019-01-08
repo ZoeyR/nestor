@@ -3,10 +3,10 @@ use std::ops::Deref;
 
 use crate::config::is_admin;
 use crate::config::Config;
+use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
 use crate::handler::Command;
 use crate::handler::Response;
-use crate::models::FactoidEnum;
 
 use failure::Error;
 
@@ -58,7 +58,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
             FactoidEnum::Say,
             EditOptions::MustNot(
                 || raw_description.trim(),
-                PhantomData::<fn(&crate::models::Factoid) -> String>,
+                PhantomData::<fn(&Factoid) -> String>,
             ),
         )?,
         ":=" => learn_helper(
@@ -69,7 +69,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
             FactoidEnum::Say,
             EditOptions::MustNot(
                 || format!("{} is {}", actual_factoid, raw_description),
-                PhantomData::<fn(&crate::models::Factoid) -> String>,
+                PhantomData::<fn(&Factoid) -> String>,
             ),
         )?,
         "+=" => learn_helper(
@@ -79,9 +79,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
             db,
             FactoidEnum::Say,
             EditOptions::Must(
-                |factoid: &crate::models::Factoid| {
-                    format!("{} {}", factoid.description, raw_description.trim())
-                },
+                |factoid: &Factoid| format!("{} {}", factoid.description, raw_description.trim()),
                 PhantomData::<fn() -> String>,
             ),
         )?,
@@ -92,7 +90,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
             db,
             FactoidEnum::Say,
             EditOptions::Optional(
-                |_: &crate::models::Factoid| raw_description.trim(),
+                |_: &Factoid| raw_description.trim(),
                 || raw_description.trim(),
             ),
         )?,
@@ -104,7 +102,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
             FactoidEnum::Act,
             EditOptions::MustNot(
                 || raw_description.trim(),
-                PhantomData::<fn(&crate::models::Factoid) -> String>,
+                PhantomData::<fn(&Factoid) -> String>,
             ),
         )?,
         "@=" => learn_helper(
@@ -115,7 +113,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
             FactoidEnum::Alias,
             EditOptions::MustNot(
                 || raw_description.trim(),
-                PhantomData::<fn(&crate::models::Factoid) -> String>,
+                PhantomData::<fn(&Factoid) -> String>,
             ),
         )?,
         format @ "~=" => Response::Notice(format!(
@@ -137,13 +135,13 @@ enum EditOptions<E, F> {
 fn learn_helper<E, F, T, G>(
     nick: &str,
     label: &str,
-    mut factoid: Option<crate::models::Factoid>,
+    mut factoid: Option<Factoid>,
     db: &Db,
     intent: FactoidEnum,
     editor: EditOptions<E, F>,
 ) -> Result<Response, Error>
 where
-    E: for<'factoid> Fn(&'factoid crate::models::Factoid) -> G,
+    E: for<'factoid> Fn(&'factoid Factoid) -> G,
     F: Fn() -> T,
     T: Deref<Target = str>,
     G: Deref<Target = str>,
