@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::schema::factoids;
 
 use chrono::naive::NaiveDateTime;
@@ -6,7 +8,6 @@ use diesel::deserialize::{self, FromSql};
 use diesel::serialize::{self, Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
-use std::io::Write;
 
 #[derive(Queryable)]
 pub struct Factoid {

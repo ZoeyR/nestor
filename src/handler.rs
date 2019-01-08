@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 use crate::database::Db;
 use crate::models::FactoidEnum;
+
 use failure::Error;
-use std::collections::HashMap;
 
 pub struct Command<'a> {
     pub source_nick: &'a str,

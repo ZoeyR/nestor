@@ -1,8 +1,9 @@
+use std::fs;
+use std::path::Path;
+
 use failure::Error;
 use irc::client::data::Config as IrcConfig;
 use serde::Deserialize;
-use std::fs;
-use std::path::Path;
 
 #[derive(Deserialize)]
 pub struct Config {

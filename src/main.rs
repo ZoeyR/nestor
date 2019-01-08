@@ -4,6 +4,7 @@
 extern crate diesel;
 
 use crate::handler::Response;
+
 use irc::client::prelude::*;
 
 mod commands;
