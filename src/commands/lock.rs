@@ -9,7 +9,7 @@ use failure::Error;
 
 pub fn lock(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
     if !is_admin(command.source_nick, config) {
-        return Ok(Response::Say("Only an admin can lock a factoid".into()));
+        return Ok(Response::Notice("Only an admin can lock a factoid".into()));
     }
 
     if command.arguments.len() < 1 {
@@ -39,7 +39,9 @@ pub fn lock(command: Command, config: &Config, db: &Db) -> Result<Response, Erro
 
 pub fn unlock(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
     if !is_admin(command.source_nick, config) {
-        return Ok(Response::Say("Only an admin canun lock a factoid".into()));
+        return Ok(Response::Notice(
+            "Only an admin can unlock a factoid".into(),
+        ));
     }
 
     if command.arguments.len() < 1 {
