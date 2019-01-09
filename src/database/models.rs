@@ -32,16 +32,23 @@ pub struct NewFactoid<'a> {
     pub description: &'a str,
     pub nickname: &'a str,
     pub timestamp: NaiveDateTime,
+    pub locked: bool,
 }
 
 impl<'a> NewFactoid<'a> {
     pub fn from_rfactoid(factoid: &'a RFactoid) -> Result<Self, Error> {
+        let intent = match &factoid.val.intent {
+            Some(intent) => FactoidEnum::from_str(intent)?,
+            None => FactoidEnum::Forget,
+        };
+
         Ok(NewFactoid {
             label: &factoid.key,
-            intent: FactoidEnum::from_str(&factoid.val.intent)?,
+            intent,
             description: &factoid.val.message,
             nickname: &factoid.val.editor.nickname,
             timestamp: NaiveDateTime::parse_from_str(&factoid.val.time, "%+")?,
+            locked: factoid.val.frozen,
         })
     }
 }

@@ -56,6 +56,8 @@ fn main() {
             handler.register_default(commands::user_defined);
             handler.register("learn", commands::learn);
             handler.register("forget", commands::forget);
+            handler.register("lock", commands::lock);
+            handler.register("unlock", commands::unlock);
 
             let mut reactor = IrcReactor::new().unwrap();
             let client = reactor

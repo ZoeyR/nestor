@@ -11,10 +11,6 @@ use crate::handler::Response;
 use failure::Error;
 
 pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
-    if !is_admin(command.source_nick, config) {
-        return Ok(Response::Say("Shoo! I'm testing this right now".into()));
-    }
-
     let operation_index = match command
         .arguments
         .iter()
@@ -53,6 +49,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
         "=" => learn_helper(
             command.source_nick,
             &actual_factoid,
+            config,
             existing_factoid,
             db,
             FactoidEnum::Say,
@@ -64,6 +61,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
         ":=" => learn_helper(
             command.source_nick,
             &actual_factoid,
+            config,
             existing_factoid,
             db,
             FactoidEnum::Say,
@@ -75,6 +73,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
         "+=" => learn_helper(
             command.source_nick,
             &actual_factoid,
+            config,
             existing_factoid,
             db,
             FactoidEnum::Say,
@@ -86,6 +85,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
         "f=" => learn_helper(
             command.source_nick,
             &actual_factoid,
+            config,
             existing_factoid,
             db,
             FactoidEnum::Say,
@@ -97,6 +97,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
         "!=" => learn_helper(
             command.source_nick,
             &actual_factoid,
+            config,
             existing_factoid,
             db,
             FactoidEnum::Act,
@@ -108,6 +109,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
         "@=" => learn_helper(
             command.source_nick,
             &actual_factoid,
+            config,
             existing_factoid,
             db,
             FactoidEnum::Alias,
@@ -135,6 +137,7 @@ enum EditOptions<E, F> {
 fn learn_helper<E, F, T, G>(
     nick: &str,
     label: &str,
+    config: &Config,
     mut factoid: Option<Factoid>,
     db: &Db,
     intent: FactoidEnum,
@@ -152,7 +155,7 @@ where
 
     Ok(match (factoid, editor) {
         (None, EditOptions::MustNot(fresh, _)) | (None, EditOptions::Optional(_, fresh)) => {
-            db.create_factoid(nick, intent, label, &fresh())?;
+            db.create_factoid(nick, intent, label, &fresh(), false)?;
             Response::Notice(format!("learned factoid: '{}'.", label))
         }
         (None, EditOptions::Must(_, _)) => {
@@ -164,9 +167,16 @@ where
         )),
         (Some(factoid), EditOptions::Must(editor, _))
         | (Some(factoid), EditOptions::Optional(editor, _)) => {
-            let description = editor(&factoid);
-            db.create_factoid(nick, factoid.intent, &label, &description)?;
-            Response::Notice(format!("edited factoid: '{}'.", label))
+            if factoid.locked && !is_admin(nick, config) {
+                Response::Notice(format!(
+                    "cannot edit factoid: '{}' because it is locked.",
+                    label
+                ))
+            } else {
+                let description = editor(&factoid);
+                db.create_factoid(nick, factoid.intent, &label, &description, false)?;
+                Response::Notice(format!("edited factoid: '{}'.", label))
+            }
         }
     })
 }

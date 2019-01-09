@@ -56,6 +56,7 @@ impl Db {
         intent: FactoidEnum,
         factoid: &str,
         description: &str,
+        locked: bool,
     ) -> Result<(), Error> {
         use self::schema::factoids;
 
@@ -66,6 +67,7 @@ impl Db {
             description,
             nickname,
             timestamp,
+            locked,
         };
 
         diesel::insert_into(factoids::table)

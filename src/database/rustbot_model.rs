@@ -13,7 +13,7 @@ pub struct RFactoid {
 
 #[derive(Serialize, Deserialize)]
 pub struct RFactoidValue {
-    pub intent: String,
+    pub intent: Option<String>,
     pub message: String,
     pub editor: RFactoidEditor,
     pub time: String,
@@ -31,10 +31,17 @@ impl From<Factoid> for RFactoid {
     fn from(factoid: Factoid) -> Self {
         let time = DateTime::<Utc>::from_utc(factoid.timestamp, Utc)
             .to_rfc3339_opts(SecondsFormat::Millis, true);
+        let intent = match factoid.intent {
+            FactoidEnum::Act => Some("act".into()),
+            FactoidEnum::Say => Some("say".into()),
+            FactoidEnum::Alias => Some("alias".into()),
+            FactoidEnum::Forget => None,
+        };
+
         RFactoid {
             key: factoid.label,
             val: RFactoidValue {
-                intent: factoid.intent.to_string(),
+                intent,
                 message: factoid.description,
                 editor: RFactoidEditor {
                     nickname: factoid.nickname,

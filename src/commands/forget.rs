@@ -12,13 +12,13 @@ pub fn forget(command: Command, config: &Config, db: &Db) -> Result<Response, Er
         return Ok(Response::Say("Shoo! I'm testing this right now".into()));
     }
 
-    if command.arguments.len() != 1 {
+    if command.arguments.len() < 1 {
         return Ok(Response::Notice(
             "Invalid command format, please use ~forget <factoid>".into(),
         ));
     }
 
-    let actual_factoid = command.arguments[0];
+    let actual_factoid = command.arguments.join(" ");
     Ok(match db.get_factoid(&actual_factoid)? {
         Some(ref factoid) if factoid.intent != FactoidEnum::Forget => {
             db.create_factoid(
@@ -26,6 +26,7 @@ pub fn forget(command: Command, config: &Config, db: &Db) -> Result<Response, Er
                 FactoidEnum::Forget,
                 &factoid.label,
                 &factoid.description,
+                false,
             )?;
             Response::Notice(format!("forgot factoid '{}'", factoid.label))
         }
