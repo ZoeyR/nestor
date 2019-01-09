@@ -45,6 +45,12 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
     let existing_factoid = db.get_factoid(&actual_factoid)?;
     let raw_description = command.arguments[operation_index + 1..].join(" ");
 
+    if actual_factoid.contains("@") {
+        return Ok(Response::Notice(
+            "factoid keys cannot contain an @ symbol".into(),
+        ));
+    }
+
     Ok(match operation {
         "=" => learn_helper(
             command.source_nick,
