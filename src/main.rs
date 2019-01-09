@@ -14,6 +14,8 @@ use crate::handler::{handle_message, Response};
 use chrono::{offset, DateTime, NaiveDateTime, Utc};
 use irc::client::ext::ClientExt;
 use irc::client::reactor::IrcReactor;
+use reqwest::header::USER_AGENT;
+use reqwest::r#async::Client;
 use structopt::StructOpt;
 
 mod commands;
@@ -58,6 +60,7 @@ fn main() {
             handler.register("forget", commands::forget);
             handler.register("lock", commands::lock);
             handler.register("unlock", commands::unlock);
+            handler.register("crate", commands::crate_info);
 
             let mut reactor = IrcReactor::new().unwrap();
             let client = reactor

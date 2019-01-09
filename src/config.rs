@@ -20,6 +20,7 @@ pub struct BotSettings {
     pub blacklisted_users: Vec<String>,
     pub database_url: String,
     pub command_indicator: String,
+    pub contact: String,
     pub alias_depth: u32,
 }
 

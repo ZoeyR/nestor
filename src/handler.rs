@@ -45,6 +45,7 @@ impl<'a> Command<'a> {
     }
 }
 
+#[derive(Debug)]
 pub enum Response {
     Say(String),
     Act(String),
@@ -123,6 +124,7 @@ pub fn handle_message(client: &IrcClient, message: Message, config: &Config, han
         };
 
         let target = message.response_target().unwrap_or(target);
+        println!("{:?}", result);
         match result {
             Response::Say(message) => client.send_privmsg(target, &message).unwrap(),
             Response::Act(message) => client.send_action(target, &message).unwrap(),

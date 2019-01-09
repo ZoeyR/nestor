@@ -27,3 +27,4 @@ blacklisted_users = ["bad_user"]
 database_url = "rustybot.sqlite"
 command_indicator = "!"
 alias_depth = 3
+contact = "abuse@example.com"
