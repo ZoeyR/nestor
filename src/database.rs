@@ -1,4 +1,5 @@
 use self::models::{Factoid, FactoidEnum, NewFactoid};
+use self::rustbot_model::RFactoid;
 
 use chrono::offset::Utc;
 use diesel::prelude::*;
@@ -6,8 +7,8 @@ use diesel::sqlite::SqliteConnection;
 use failure::Error;
 
 pub mod models;
+pub mod rustbot_model;
 pub mod schema;
-mod rustbot_model;
 
 pub struct Db {
     connection: SqliteConnection,
@@ -29,6 +30,24 @@ impl Db {
             .first::<Factoid>(&self.connection)
             .optional()
             .map_err(From::from)
+    }
+
+    pub fn all_factoids(&self) -> Result<Vec<Factoid>, Error> {
+        use self::schema::factoids;
+
+        Ok(factoids::table.load(&self.connection)?)
+    }
+
+    pub fn create_from_rfactoid(&self, rfactoid: &RFactoid) -> Result<(), Error> {
+        use self::schema::factoids;
+
+        let new_factoid = NewFactoid::from_rfactoid(rfactoid)?;
+
+        diesel::insert_into(factoids::table)
+            .values(&new_factoid)
+            .execute(&self.connection)?;
+
+        Ok(())
     }
 
     pub fn create_factoid(

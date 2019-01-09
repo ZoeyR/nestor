@@ -45,4 +45,22 @@ pub struct Args {
         default_value = "irc.config.toml"
     )]
     pub config: PathBuf,
+    #[structopt(subcommand)] // Note that we mark a field as a subcommand
+    pub command: Command,
+}
+
+#[derive(StructOpt)]
+pub enum Command {
+    #[structopt(name = "import")]
+    Import {
+        #[structopt(short = "f", long = "file", parse(from_os_str))]
+        file: PathBuf,
+    },
+    #[structopt(name = "export")]
+    Export {
+        #[structopt(short = "f", long = "file", parse(from_os_str))]
+        file: PathBuf,
+    },
+    #[structopt(name = "launch")]
+    Launch {},
 }

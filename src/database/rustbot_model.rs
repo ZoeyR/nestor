@@ -1,5 +1,8 @@
 use super::models::{Factoid, FactoidEnum, NewFactoid};
+use chrono::DateTime;
 use chrono::NaiveDateTime;
+use chrono::SecondsFormat;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -13,7 +16,7 @@ pub struct RFactoidValue {
     pub intent: String,
     pub message: String,
     pub editor: RFactoidEditor,
-    pub time: NaiveDateTime,
+    pub time: String,
     pub frozen: bool,
 }
 
@@ -26,6 +29,8 @@ pub struct RFactoidEditor {
 
 impl From<Factoid> for RFactoid {
     fn from(factoid: Factoid) -> Self {
+        let time = DateTime::<Utc>::from_utc(factoid.timestamp, Utc)
+            .to_rfc3339_opts(SecondsFormat::Millis, true);
         RFactoid {
             key: factoid.label,
             val: RFactoidValue {
@@ -36,7 +41,7 @@ impl From<Factoid> for RFactoid {
                     username: "".into(),
                     hostname: "".into(),
                 },
-                time: factoid.timestamp,
+                time,
                 frozen: factoid.locked,
             },
         }

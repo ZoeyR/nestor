@@ -35,13 +35,13 @@ pub struct NewFactoid<'a> {
 }
 
 impl<'a> NewFactoid<'a> {
-    fn from_rfactoid(factoid: &'a RFactoid) -> Result<Self, Error> {
+    pub fn from_rfactoid(factoid: &'a RFactoid) -> Result<Self, Error> {
         Ok(NewFactoid {
             label: &factoid.key,
             intent: FactoidEnum::from_str(&factoid.val.intent)?,
             description: &factoid.val.message,
             nickname: &factoid.val.editor.nickname,
-            timestamp: factoid.val.time,
+            timestamp: NaiveDateTime::parse_from_str(&factoid.val.time, "%+")?,
         })
     }
 }
