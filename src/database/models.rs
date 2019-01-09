@@ -1,5 +1,7 @@
 use std::io::Write;
+use std::str::FromStr;
 
+use super::rustbot_model::RFactoid;
 use super::schema::factoids;
 
 use chrono::naive::NaiveDateTime;
@@ -8,6 +10,8 @@ use diesel::deserialize::{self, FromSql};
 use diesel::serialize::{self, Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
+use failure::format_err;
+use failure::Error;
 
 #[derive(Queryable)]
 pub struct Factoid {
@@ -28,6 +32,18 @@ pub struct NewFactoid<'a> {
     pub description: &'a str,
     pub nickname: &'a str,
     pub timestamp: NaiveDateTime,
+}
+
+impl<'a> NewFactoid<'a> {
+    fn from_rfactoid(factoid: &'a RFactoid) -> Result<Self, Error> {
+        Ok(NewFactoid {
+            label: &factoid.key,
+            intent: FactoidEnum::from_str(&factoid.val.intent)?,
+            description: &factoid.val.message,
+            nickname: &factoid.val.editor.nickname,
+            timestamp: factoid.val.time,
+        })
+    }
 }
 
 #[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
@@ -61,6 +77,31 @@ impl FromSql<Text, Sqlite> for FactoidEnum {
             "alias" => Ok(FactoidEnum::Alias),
             "forget" => Ok(FactoidEnum::Forget),
             _ => Err("Unrecognized enum variant".into()),
+        }
+    }
+}
+
+impl ToString for FactoidEnum {
+    fn to_string(&self) -> String {
+        match self {
+            FactoidEnum::Act => "act",
+            FactoidEnum::Say => "say",
+            FactoidEnum::Alias => "alias",
+            FactoidEnum::Forget => "forget",
+        }
+        .into()
+    }
+}
+
+impl FromStr for FactoidEnum {
+    type Err = Error;
+    fn from_str(val: &str) -> Result<Self, Self::Err> {
+        match val {
+            "act" => Ok(FactoidEnum::Act),
+            "say" => Ok(FactoidEnum::Say),
+            "alias" => Ok(FactoidEnum::Alias),
+            "forget" => Ok(FactoidEnum::Forget),
+            _ => Err(format_err!("Unrecognized enum variant")),
         }
     }
 }

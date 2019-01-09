@@ -7,6 +7,7 @@ use failure::Error;
 
 pub mod models;
 pub mod schema;
+mod rustbot_model;
 
 pub struct Db {
     connection: SqliteConnection,
