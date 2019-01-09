@@ -21,18 +21,26 @@ impl<'a> Command<'a> {
         message: &'a str,
         config: &Config,
     ) -> Option<Command<'a>> {
-        if !message.starts_with(&config.bot_settings.command_indicator) {
-            return None;
-        }
+        let command_str = if !message.starts_with(&config.bot_settings.command_indicator) {
+            let start = message.find(&format!("{{{}", config.bot_settings.command_indicator))?
+                + config.bot_settings.command_indicator.len()
+                + 1;
+            let end = message.split_at(start).1.find("}")?;
 
-        let mut parts = message.split(' ');
-        let (_, command) = parts
-            .next()?
-            .split_at(config.bot_settings.command_indicator.len());
+            &message[start..(start + end)]
+        } else {
+            message
+                .split_at(config.bot_settings.command_indicator.len())
+                .1
+        };
+
+        let mut parts = command_str.split(' ');
+        let command = parts.next()?;
+        let args = parts.collect();
         Some(Command {
             source_nick,
             command_str: command,
-            arguments: parts.collect(),
+            arguments: args,
         })
     }
 }
