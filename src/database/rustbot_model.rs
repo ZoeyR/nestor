@@ -1,8 +1,5 @@
-use super::models::{Factoid, FactoidEnum, NewFactoid};
-use chrono::DateTime;
-use chrono::NaiveDateTime;
-use chrono::SecondsFormat;
-use chrono::Utc;
+use super::models::{Factoid, FactoidEnum};
+use chrono::{DateTime, SecondsFormat, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

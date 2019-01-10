@@ -4,18 +4,14 @@
 extern crate diesel;
 
 use std::fs::File;
-use std::io::BufRead;
-use std::io::{BufReader, Write};
+use std::io::{BufRead, BufReader, Write};
 
-use crate::config::{Args, Command, Config};
+use crate::config::{Args, Command};
 use crate::database::rustbot_model::RFactoid;
-use crate::handler::{handle_message, Response};
+use crate::handler::handle_message;
 
-use chrono::{offset, DateTime, NaiveDateTime, Utc};
 use irc::client::ext::ClientExt;
 use irc::client::reactor::IrcReactor;
-use reqwest::header::USER_AGENT;
-use reqwest::r#async::Client;
 use structopt::StructOpt;
 
 mod commands;
@@ -61,6 +57,7 @@ fn main() {
             handler.register("lock", commands::lock);
             handler.register("unlock", commands::unlock);
             handler.register("crate", commands::crate_info);
+            handler.register("error", commands::rustc_error);
 
             let mut reactor = IrcReactor::new().unwrap();
             let client = reactor
@@ -68,7 +65,7 @@ fn main() {
                 .unwrap();
             client.identify().unwrap();
             reactor.register_client_with_handler(client, move |client, message| {
-                handle_message(client, message, &config, &handler);
+                handle_message(client, &message, &config, &handler);
                 Ok(())
             });
 

@@ -1,9 +1,7 @@
-use crate::config::is_admin;
-use crate::config::Config;
+use crate::config::{Config, is_admin};
 use crate::database::models::FactoidEnum;
 use crate::database::Db;
-use crate::handler::Command;
-use crate::handler::Response;
+use crate::handler::{Command, Response};
 
 use failure::Error;
 
@@ -12,7 +10,7 @@ pub fn forget(command: Command, config: &Config, db: &Db) -> Result<Response, Er
         return Ok(Response::Say("Shoo! I'm testing this right now".into()));
     }
 
-    if command.arguments.len() < 1 {
+    if command.arguments.is_empty() {
         return Ok(Response::Notice(
             "Invalid command format, please use ~forget <factoid>".into(),
         ));

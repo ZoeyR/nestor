@@ -1,9 +1,6 @@
-use crate::config::is_admin;
-use crate::config::Config;
-use crate::database::models::FactoidEnum;
+use crate::config::{Config, is_admin};
 use crate::database::Db;
-use crate::handler::Command;
-use crate::handler::Response;
+use crate::handler::{Command, Response};
 
 use failure::Error;
 
@@ -12,7 +9,7 @@ pub fn lock(command: Command, config: &Config, db: &Db) -> Result<Response, Erro
         return Ok(Response::Notice("Only an admin can lock a factoid".into()));
     }
 
-    if command.arguments.len() < 1 {
+    if command.arguments.is_empty() {
         return Ok(Response::Notice(
             "Invalid command format, please use ~lock <factoid>".into(),
         ));
@@ -44,7 +41,7 @@ pub fn unlock(command: Command, config: &Config, db: &Db) -> Result<Response, Er
         ));
     }
 
-    if command.arguments.len() < 1 {
+    if command.arguments.is_empty() {
         return Ok(Response::Notice(
             "Invalid command format, please use ~unlock <factoid>".into(),
         ));

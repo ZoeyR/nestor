@@ -1,12 +1,10 @@
 use std::marker::PhantomData;
 use std::ops::Deref;
 
-use crate::config::is_admin;
-use crate::config::Config;
+use crate::config::{Config, is_admin};
 use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
-use crate::handler::Command;
-use crate::handler::Response;
+use crate::handler::{Command, Response};
 
 use failure::Error;
 
@@ -45,7 +43,7 @@ pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Err
     let existing_factoid = db.get_factoid(&actual_factoid)?;
     let raw_description = command.arguments[operation_index + 1..].join(" ");
 
-    if actual_factoid.contains("@") {
+    if actual_factoid.contains('@') {
         return Ok(Response::Notice(
             "factoid keys cannot contain an @ symbol".into(),
         ));

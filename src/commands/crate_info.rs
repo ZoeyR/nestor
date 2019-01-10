@@ -1,15 +1,11 @@
-use crate::config::is_admin;
 use crate::config::Config;
-use crate::database::models::FactoidEnum;
 use crate::database::Db;
-use crate::handler::Command;
-use crate::handler::Response;
+use crate::handler::{Command, Response};
 
 use failure::Error;
 use reqwest::header::USER_AGENT;
 use reqwest::Client;
 use serde::Deserialize;
-use std::borrow::Borrow;
 use std::ops::Deref;
 
 #[derive(Deserialize)]
@@ -26,7 +22,7 @@ struct Crate {
     documentation: String,
 }
 
-pub fn crate_info(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
+pub fn crate_info(command: Command, config: &Config, _: &Db) -> Result<Response, Error> {
     let client = Client::builder().build()?;
     let api: CratesApi = client
         .get(&format!(

@@ -25,7 +25,7 @@ impl<'a> Command<'a> {
             let start = message.find(&format!("{{{}", config.bot_settings.command_indicator))?
                 + config.bot_settings.command_indicator.len()
                 + 1;
-            let end = message.split_at(start).1.find("}")?;
+            let end = message.split_at(start).1.find('}')?;
 
             &message[start..(start + end)]
         } else {
@@ -102,7 +102,7 @@ impl Handler {
     }
 }
 
-pub fn handle_message(client: &IrcClient, message: Message, config: &Config, handler: &Handler) {
+pub fn handle_message(client: &IrcClient, message: &Message, config: &Config, handler: &Handler) {
     println!("{:?}", message);
     let (target, msg) = match message.command {
         irc::proto::command::Command::PRIVMSG(ref target, ref msg) => (target, msg),

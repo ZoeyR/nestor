@@ -10,8 +10,7 @@ use diesel::deserialize::{self, FromSql};
 use diesel::serialize::{self, Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
-use failure::format_err;
-use failure::Error;
+use failure::{Error, format_err};
 
 #[derive(Queryable)]
 pub struct Factoid {
@@ -53,7 +52,7 @@ impl<'a> NewFactoid<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
+#[derive(Debug, PartialEq, FromSqlRow, AsExpression, Clone, Copy)]
 #[sql_type = "Text"]
 pub enum FactoidEnum {
     Act,
