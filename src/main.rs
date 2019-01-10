@@ -1,15 +1,18 @@
 #![allow(proc_macro_derive_resolution_fallback)]
+#![feature(await_macro, async_await, futures_api)]
 
 #[macro_use]
 extern crate diesel;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
+use std::rc::Rc;
 
 use crate::config::{Args, Command};
 use crate::database::rustbot_model::RFactoid;
 use crate::handler::handle_message;
 
+use tokio_async_await::compat::backward;
 use irc::client::ext::ClientExt;
 use irc::client::reactor::IrcReactor;
 use structopt::StructOpt;
@@ -21,7 +24,7 @@ mod handler;
 
 fn main() {
     let args = Args::from_args();
-    let config = config::Config::load(args.config).unwrap();
+    let config = Rc::new(config::Config::load(args.config).unwrap());
     let db = database::Db::open(&config.bot_settings.database_url).unwrap();
 
     match args.command {
@@ -50,14 +53,7 @@ fn main() {
             }
         }
         Command::Launch {} => {
-            let mut handler = handler::Handler::new(db);
-            handler.register_default(commands::user_defined);
-            handler.register("learn", commands::learn);
-            handler.register("forget", commands::forget);
-            handler.register("lock", commands::lock);
-            handler.register("unlock", commands::unlock);
-            handler.register("crate", commands::crate_info);
-            handler.register("error", commands::rustc_error);
+            let handler = Rc::new(handler::Handler::new(db));
 
             let mut reactor = IrcReactor::new().unwrap();
             let client = reactor
@@ -65,8 +61,10 @@ fn main() {
                 .unwrap();
             client.identify().unwrap();
             reactor.register_client_with_handler(client, move |client, message| {
-                handle_message(client, &message, &config, &handler);
-                Ok(())
+                let handler = handler.clone();
+                let config = config.clone();
+                let future = handle_message(client.clone(), message, config, handler);
+                backward::Compat::new(future)
             });
 
             reactor.run().unwrap();

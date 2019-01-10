@@ -4,9 +4,10 @@ use crate::handler::{Command, Response};
 
 use failure::Error;
 use reqwest::header::USER_AGENT;
-use reqwest::Client;
+use reqwest::r#async::Client;
 use serde::Deserialize;
 use std::ops::Deref;
+use tokio::await;
 
 #[derive(Deserialize)]
 struct CratesApi {
@@ -22,9 +23,13 @@ struct Crate {
     documentation: String,
 }
 
-pub fn crate_info(command: Command, config: &Config, _: &Db) -> Result<Response, Error> {
+pub async fn crate_info<'a>(
+    command: Command<'a>,
+    config: &'a Config,
+    _: &'a Db,
+) -> Result<Response, Error> {
     let client = Client::builder().build()?;
-    let api: CratesApi = client
+    let mut response = await!(client
         .get(&format!(
             "https://crates.io/api/v1/crates/{}",
             command.arguments[0]
@@ -42,8 +47,9 @@ pub fn crate_info(command: Command, config: &Config, _: &Db) -> Result<Response,
                 config.bot_settings.contact
             ),
         )
-        .send()?
-        .json()?;
+        .send())?;
+
+    let api: CratesApi = await!(response.json())?;
 
     let crate_url = format!("https://crates.io/crates/{}", command.arguments[0]);
     Ok(Response::Notice(format!(

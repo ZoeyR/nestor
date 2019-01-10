@@ -4,7 +4,7 @@ use crate::handler::{Command, Response};
 
 use failure::Error;
 
-pub fn lock(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
+pub async fn lock<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) -> Result<Response, Error> {
     if !is_admin(command.source_nick, config) {
         return Ok(Response::Notice("Only an admin can lock a factoid".into()));
     }
@@ -34,7 +34,7 @@ pub fn lock(command: Command, config: &Config, db: &Db) -> Result<Response, Erro
     })
 }
 
-pub fn unlock(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
+pub async fn unlock<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) -> Result<Response, Error> {
     if !is_admin(command.source_nick, config) {
         return Ok(Response::Notice(
             "Only an admin can unlock a factoid".into(),

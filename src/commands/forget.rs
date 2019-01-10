@@ -5,7 +5,7 @@ use crate::handler::{Command, Response};
 
 use failure::Error;
 
-pub fn forget(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
+pub async fn forget<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) -> Result<Response, Error> {
     if !is_admin(command.source_nick, config) {
         return Ok(Response::Say("Shoo! I'm testing this right now".into()));
     }
