@@ -5,6 +5,7 @@ use crate::handler::{Command, Response};
 use failure::Error;
 use reqwest::header::USER_AGENT;
 use reqwest::r#async::Client;
+use reqwest::StatusCode;
 use serde::Deserialize;
 use std::ops::Deref;
 use tokio::await;
@@ -19,8 +20,8 @@ struct CratesApi {
 struct Crate {
     name: String,
     max_version: String,
-    description: String,
-    documentation: String,
+    description: Option<String>,
+    documentation: Option<String>,
 }
 
 pub async fn crate_info<'a>(
@@ -28,6 +29,12 @@ pub async fn crate_info<'a>(
     config: &'a Config,
     _: &'a Db,
 ) -> Result<Response, Error> {
+    if command.arguments.len() != 1 {
+        return Ok(Response::Notice(
+            "Invalid command format, please use ~crate <crate>".into(),
+        ));
+    }
+
     let client = Client::builder().build()?;
     let mut response = await!(client
         .get(&format!(
@@ -49,15 +56,42 @@ pub async fn crate_info<'a>(
         )
         .send())?;
 
-    let api: CratesApi = await!(response.json())?;
+    match response.status() {
+        StatusCode::OK => {
+            let api: CratesApi = await!(response.json())?;
 
-    let crate_url = format!("https://crates.io/crates/{}", command.arguments[0]);
-    Ok(Response::Notice(format!(
-        "{} ({}) - {} -> {} <{}>",
-        api.info.name,
-        api.info.max_version,
-        api.info.description.replace("\n", "").replace("\r", ""),
-        crate_url,
-        api.info.documentation
-    )))
+            let crate_url = format!("https://crates.io/crates/{}", command.arguments[0]);
+
+            if let Some(description) = api.info.description {
+                Ok(Response::Notice(format!(
+                    "{} ({}) - {} -> {} <{}>",
+                    api.info.name,
+                    api.info.max_version,
+                    description,
+                    crate_url,
+                    api.info
+                        .documentation
+                        .unwrap_or(format!("https://docs.rs/{}", api.info.name))
+                )))
+            } else {
+                Ok(Response::Notice(format!(
+                    "{} ({}) -> {} <{}>",
+                    api.info.name,
+                    api.info.max_version,
+                    crate_url,
+                    api.info
+                        .documentation
+                        .unwrap_or(format!("https://docs.rs/{}", api.info.name))
+                )))
+            }
+        }
+        StatusCode::NOT_FOUND => Ok(Response::Notice(format!(
+            "crate {} does not exist",
+            command.arguments[0]
+        ))),
+        code => Ok(Response::Notice(format!(
+            "crates.io returned error code: {}",
+            code.as_u16()
+        ))),
+    }
 }

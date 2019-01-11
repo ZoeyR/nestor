@@ -4,10 +4,14 @@ use crate::handler::{Command, Response};
 
 use failure::Error;
 
-pub async fn rustc_error<'a>(command: Command<'a>, _: &'a Config, _: &'a Db) -> Result<Response, Error> {
+pub async fn rustc_error<'a>(
+    command: Command<'a>,
+    _: &'a Config,
+    _: &'a Db,
+) -> Result<Response, Error> {
     if command.arguments.len() != 1 {
         return Ok(Response::Notice(
-            "Invalid command format, please use ~error <factoid>".into(),
+            "Invalid command format, please use ~error <error code>".into(),
         ));
     }
 
