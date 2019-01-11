@@ -1,15 +1,15 @@
-use crate::config::{Config, is_admin};
+use crate::config::{is_admin, Config};
 use crate::database::models::FactoidEnum;
 use crate::database::Db;
 use crate::handler::{Command, Response};
 
 use failure::Error;
 
-pub async fn forget<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) -> Result<Response, Error> {
-    if !is_admin(command.source_nick, config) {
-        return Ok(Response::Say("Shoo! I'm testing this right now".into()));
-    }
-
+pub async fn forget<'a>(
+    command: Command<'a>,
+    config: &'a Config,
+    db: &'a Db,
+) -> Result<Response, Error> {
     if command.arguments.is_empty() {
         return Ok(Response::Notice(
             "Invalid command format, please use ~forget <factoid>".into(),
@@ -18,7 +18,10 @@ pub async fn forget<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) ->
 
     let actual_factoid = command.arguments.join(" ");
     Ok(match db.get_factoid(&actual_factoid)? {
-        Some(ref factoid) if factoid.intent != FactoidEnum::Forget => {
+        Some(ref factoid)
+            if factoid.intent != FactoidEnum::Forget
+                && (!factoid.locked || is_admin(command.source_nick, config)) =>
+        {
             db.create_factoid(
                 command.source_nick,
                 FactoidEnum::Forget,
