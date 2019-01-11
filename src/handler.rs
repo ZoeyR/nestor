@@ -40,7 +40,7 @@ impl<'a> Command<'a> {
             })
             .nth(0)?;
 
-        let mut parts = command_str.split(' ');
+        let mut parts = command_str.trim().split(' ');
         let command = parts.next()?;
         let args = parts.collect();
         Some(Command {
