@@ -1,0 +1,4 @@
+CREATE TABLE qotd (
+    id INTEGER PRIMARY KEY NOT NULL,
+    quote TEXT NOT NULL
+);

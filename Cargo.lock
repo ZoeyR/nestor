@@ -1010,6 +1010,7 @@ dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
  "irc 0.13.6 (git+https://github.com/dgriffen/irc?branch=dev/dgriffen/non-sequential-handler)",
+ "rand 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.9.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.84 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.34 (registry+https://github.com/rust-lang/crates.io-index)",

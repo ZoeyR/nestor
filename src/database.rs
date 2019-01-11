@@ -1,4 +1,4 @@
-use self::models::{Factoid, FactoidEnum, NewFactoid};
+use self::models::{Factoid, FactoidEnum, NewFactoid, NewQuote, Quote};
 use self::rustbot_model::RFactoid;
 
 use chrono::offset::Utc;
@@ -72,6 +72,24 @@ impl Db {
 
         diesel::insert_into(factoids::table)
             .values(&new_factoid)
+            .execute(&self.connection)?;
+
+        Ok(())
+    }
+
+    pub fn all_quotes(&self) -> Result<Vec<Quote>, Error> {
+        use self::schema::qotd;
+
+        Ok(qotd::table.load(&self.connection)?)
+    }
+
+    pub fn create_quote(&self, quote: &str) -> Result<(), Error> {
+        use self::schema::qotd;
+
+        let new_quote = NewQuote { quote };
+
+        diesel::insert_into(qotd::table)
+            .values(&new_quote)
             .execute(&self.connection)?;
 
         Ok(())

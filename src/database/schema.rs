@@ -9,3 +9,15 @@ table! {
         locked -> Bool,
     }
 }
+
+table! {
+    qotd (id) {
+        id -> Integer,
+        quote -> Text,
+    }
+}
+
+allow_tables_to_appear_in_same_query!(
+    factoids,
+    qotd,
+);

@@ -92,6 +92,7 @@ impl Handler {
             "unlock" => await!(commands::unlock(command, config, &self.db)),
             "crate" => await!(commands::crate_info(command, config, &self.db)),
             "error" => await!(commands::rustc_error(command, config, &self.db)),
+            "qotd" => await!(commands::qotd(command, config, &self.db)),
             _ => await!(commands::user_defined(command, config, &self.db)),
         }
     }

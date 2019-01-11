@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use super::rustbot_model::RFactoid;
 use super::schema::factoids;
+use super::schema::qotd;
 
 use chrono::naive::NaiveDateTime;
 use diesel::backend::Backend;
@@ -10,7 +11,7 @@ use diesel::deserialize::{self, FromSql};
 use diesel::serialize::{self, Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
-use failure::{Error, format_err};
+use failure::{format_err, Error};
 
 #[derive(Queryable)]
 pub struct Factoid {
@@ -32,6 +33,18 @@ pub struct NewFactoid<'a> {
     pub nickname: &'a str,
     pub timestamp: NaiveDateTime,
     pub locked: bool,
+}
+
+#[derive(Queryable)]
+pub struct Quote {
+    pub id: i32,
+    pub quote: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "qotd"]
+pub struct NewQuote<'a> {
+    pub quote: &'a str,
 }
 
 impl<'a> NewFactoid<'a> {
