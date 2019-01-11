@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-
+use crate::commands;
 use crate::config::Config;
 use crate::database::models::FactoidEnum;
 use crate::database::Db;
@@ -7,7 +6,9 @@ use crate::database::Db;
 use failure::Error;
 use irc::client::ext::ClientExt;
 use irc::client::IrcClient;
+use irc::error::IrcError;
 use irc::proto::Message;
+use std::rc::Rc;
 
 pub struct Command<'a> {
     pub source_nick: &'a str,
@@ -68,59 +69,51 @@ impl Response {
     }
 }
 
-type MessageHandler = fn(Command, &Config, &Db) -> Result<Response, Error>;
-
 pub struct Handler {
     db: Db,
-    commands: HashMap<&'static str, MessageHandler>,
-    default: Option<MessageHandler>,
 }
 
 impl Handler {
     pub fn new(db: Db) -> Self {
-        Handler {
-            db,
-            commands: HashMap::new(),
-            default: None,
-        }
+        Handler { db }
     }
 
-    pub fn register(&mut self, label: &'static str, handler: MessageHandler) {
-        self.commands.insert(label, handler);
-    }
-
-    pub fn register_default(&mut self, handler: MessageHandler) {
-        self.default = Some(handler);
-    }
-
-    pub fn handle(&self, command: Command, config: &Config) -> Result<Response, Error> {
-        if self.commands.contains_key(command.command_str) {
-            self.commands[command.command_str](command, config, &self.db)
-        } else if let Some(default) = self.default {
-            default(command, config, &self.db)
-        } else {
-            Ok(Response::Say(format!(
-                "command '{}' not found",
-                command.command_str
-            )))
+    pub async fn handle<'a>(
+        &'a self,
+        command: Command<'a>,
+        config: &'a Config,
+    ) -> Result<Response, Error> {
+        match command.command_str {
+            "learn" => await!(commands::learn(command, config, &self.db)),
+            "forget" => await!(commands::forget(command, config, &self.db)),
+            "lock" => await!(commands::lock(command, config, &self.db)),
+            "unlock" => await!(commands::unlock(command, config, &self.db)),
+            "crate" => await!(commands::crate_info(command, config, &self.db)),
+            "error" => await!(commands::rustc_error(command, config, &self.db)),
+            _ => await!(commands::user_defined(command, config, &self.db)),
         }
     }
 }
 
-pub fn handle_message(client: &IrcClient, message: &Message, config: &Config, handler: &Handler) {
+pub async fn handle_message<'a>(
+    client: IrcClient,
+    message: Message,
+    config: Rc<Config>,
+    handler: Rc<Handler>,
+) -> Result<(), IrcError> {
     println!("{:?}", message);
     let (target, msg) = match message.command {
         irc::proto::command::Command::PRIVMSG(ref target, ref msg) => (target, msg),
-        _ => return,
+        _ => return Ok(()),
     };
 
     let user = message.source_nickname().unwrap();
     if config.bot_settings.blacklisted_users.contains(&user.into()) {
-        return;
+        return Ok(());
     }
 
-    if let Some(command) = Command::try_parse(user, msg, config) {
-        let result = match handler.handle(command, config) {
+    if let Some(command) = Command::try_parse(user, msg, &config) {
+        let result = match await!(handler.handle(command, &config)) {
             Ok(response) => response,
             Err(err) => {
                 println!("{:?}", err);
@@ -137,4 +130,6 @@ pub fn handle_message(client: &IrcClient, message: &Message, config: &Config, ha
             Response::None => {}
         }
     }
+
+    Ok(())
 }

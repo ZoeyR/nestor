@@ -8,7 +8,7 @@ use crate::handler::{Command, Response};
 
 use failure::Error;
 
-pub fn learn(command: Command, config: &Config, db: &Db) -> Result<Response, Error> {
+pub async fn learn<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) -> Result<Response, Error> {
     let operation_index = match command
         .arguments
         .iter()

@@ -2,10 +2,13 @@ use crate::config::Config;
 use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
 use crate::handler::{Command, Response};
-
 use failure::Error;
 
-pub fn user_defined(command: Command, _config: &Config, db: &Db) -> Result<Response, Error> {
+pub async fn user_defined<'a>(
+    command: Command<'a>,
+    _config: &'a Config,
+    db: &'a Db,
+) -> Result<Response, Error> {
     let num_args = command.arguments.len();
 
     let full_command = std::iter::once(command.command_str)
@@ -60,7 +63,7 @@ fn process_alias(mut factoid: Factoid, db: &Db) -> Result<Response, Error> {
                     return Ok(Response::Notice(format!(
                         "unknown factoid alias '{}'",
                         factoid.description
-                    )))
+                    )));
                 }
             },
             _ => return Ok(Response::from_intent(factoid.intent, factoid.description)),

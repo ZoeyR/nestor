@@ -5,11 +5,14 @@ authors = ["Daniel Griffen <daniel@griffen.io>"]
 edition = "2018"
 
 [dependencies]
-irc = "0.13"
+futures = "0.1.25"
+irc = { git = "https://github.com/dgriffen/irc", branch = "dev/dgriffen/non-sequential-handler" }
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.0", features = ["sqlite", "chrono"] }
 failure = "0.1"
 toml = "0.4"
+tokio = { version = "0.1.13", features = ["async-await-preview"] }
+tokio-async-await = "0.1.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 structopt = "0.2"
