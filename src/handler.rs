@@ -18,6 +18,7 @@ pub struct Command<'a> {
 
 impl<'a> Command<'a> {
     pub fn try_parse(
+        our_nick: &'a str,
         source_nick: &'a str,
         message: &'a str,
         config: &Config,
@@ -26,6 +27,7 @@ impl<'a> Command<'a> {
             .bot_settings
             .command_indicator
             .iter()
+            .chain(std::iter::once(&format!("{}:", our_nick)))
             .filter_map(|indicator| {
                 if !message.starts_with(indicator) {
                     message.find(&format!("{{{}", indicator)).and_then(|start| {
@@ -112,7 +114,7 @@ pub async fn handle_message<'a>(
         return Ok(());
     }
 
-    if let Some(command) = Command::try_parse(user, msg, &config) {
+    if let Some(command) = Command::try_parse(client.current_nickname(), user, msg, &config) {
         let result = match await!(handler.handle(command, &config)) {
             Ok(response) => response,
             Err(err) => {
