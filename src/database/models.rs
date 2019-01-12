@@ -1,9 +1,10 @@
 use std::io::Write;
 use std::str::FromStr;
 
-use super::rustbot_model::RFactoid;
+use super::import_models::RFactoid;
 use super::schema::factoids;
 use super::schema::qotd;
+use super::schema::winerrors;
 
 use chrono::naive::NaiveDateTime;
 use diesel::backend::Backend;
@@ -47,6 +48,24 @@ pub struct NewQuote<'a> {
     pub quote: &'a str,
 }
 
+#[derive(Queryable)]
+pub struct WinError {
+    pub id: i32,
+    pub code: String,
+    pub error_type: WinErrorVariant,
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "winerrors"]
+pub struct NewWinError<'a> {
+    pub code: &'a str,
+    pub error_type: WinErrorVariant,
+    pub name: &'a str,
+    pub description: &'a str,
+}
+
 impl<'a> NewFactoid<'a> {
     pub fn from_rfactoid(factoid: &'a RFactoid) -> Result<Self, Error> {
         let intent = match &factoid.val.intent {
@@ -72,6 +91,14 @@ pub enum FactoidEnum {
     Say,
     Alias,
     Forget,
+}
+
+#[derive(Debug, PartialEq, FromSqlRow, AsExpression, Clone, Copy)]
+#[sql_type = "Text"]
+pub enum WinErrorVariant {
+    HResult,
+    NtStatus,
+    Win32,
 }
 
 impl ToSql<Text, Sqlite> for FactoidEnum {
@@ -120,6 +147,53 @@ impl FromStr for FactoidEnum {
             "say" => Ok(FactoidEnum::Say),
             "alias" => Ok(FactoidEnum::Alias),
             "forget" => Ok(FactoidEnum::Forget),
+            _ => Err(format_err!("Unrecognized enum variant")),
+        }
+    }
+}
+
+impl ToSql<Text, Sqlite> for WinErrorVariant {
+    fn to_sql<W: Write>(&self, out: &mut Output<W, Sqlite>) -> serialize::Result {
+        let write = match *self {
+            WinErrorVariant::HResult => "hresult",
+            WinErrorVariant::NtStatus => "ntstatus",
+            WinErrorVariant::Win32 => "win32",
+        };
+
+        <str as ToSql<Text, Sqlite>>::to_sql(write, out)
+    }
+}
+
+impl FromSql<Text, Sqlite> for WinErrorVariant {
+    fn from_sql(value: Option<&<Sqlite as Backend>::RawValue>) -> deserialize::Result<Self> {
+        let text = <String as FromSql<Text, Sqlite>>::from_sql(value)?;
+        match text.as_ref() {
+            "hresult" => Ok(WinErrorVariant::HResult),
+            "ntstatus" => Ok(WinErrorVariant::NtStatus),
+            "win32" => Ok(WinErrorVariant::Win32),
+            _ => Err("Unrecognized enum variant".into()),
+        }
+    }
+}
+
+impl ToString for WinErrorVariant {
+    fn to_string(&self) -> String {
+        match self {
+            WinErrorVariant::HResult => "hresult",
+            WinErrorVariant::NtStatus => "ntstatus",
+            WinErrorVariant::Win32 => "win32",
+        }
+        .into()
+    }
+}
+
+impl FromStr for WinErrorVariant {
+    type Err = Error;
+    fn from_str(val: &str) -> Result<Self, Self::Err> {
+        match val {
+            "hresult" => Ok(WinErrorVariant::HResult),
+            "ntstatus" => Ok(WinErrorVariant::NtStatus),
+            "win32" => Ok(WinErrorVariant::Win32),
             _ => Err(format_err!("Unrecognized enum variant")),
         }
     }

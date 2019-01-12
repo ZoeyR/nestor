@@ -63,6 +63,8 @@ pub enum Command {
     Import {
         #[structopt(short = "f", long = "file", parse(from_os_str))]
         file: PathBuf,
+        #[structopt(subcommand)]
+        import_type: ImportType,
     },
     #[structopt(name = "export")]
     Export {
@@ -71,4 +73,16 @@ pub enum Command {
     },
     #[structopt(name = "launch")]
     Launch {},
+}
+
+#[derive(StructOpt)]
+pub enum ImportType {
+    #[structopt(name = "factoid")]
+    Factoid,
+    #[structopt(name = "hresult")]
+    HResult,
+    #[structopt(name = "ntresult")]
+    NtResult,
+    #[structopt(name = "win32")]
+    Win32,
 }

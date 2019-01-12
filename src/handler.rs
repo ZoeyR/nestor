@@ -94,6 +94,9 @@ impl Handler {
             "error" => await!(commands::rustc_error(command, config, &self.db)),
             "qotd" => await!(commands::qotd(command, config, &self.db)),
             "rfc" => await!(commands::rfc(command, config, &self.db)),
+            "hresult" => await!(commands::hresult(command, config, &self.db)),
+            "ntstatus" => await!(commands::nt_status(command, config, &self.db)),
+            "win32" => await!(commands::win32(command, config, &self.db)),
             _ => await!(commands::user_defined(command, config, &self.db)),
         }
     }

@@ -6,6 +6,7 @@ mod learn;
 mod lock;
 mod qotd;
 mod rustc_error;
+mod windows_error;
 
 pub use self::crate_info::crate_info;
 pub use self::default::user_defined;
@@ -16,3 +17,4 @@ pub use self::lock::lock;
 pub use self::lock::unlock;
 pub use self::qotd::qotd;
 pub use self::rustc_error::rustc_error;
+pub use self::windows_error::{hresult, nt_status, win32};

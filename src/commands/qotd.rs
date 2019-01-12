@@ -1,4 +1,4 @@
-use crate::config::{is_admin, Config};
+use crate::config::Config;
 use crate::database::Db;
 use crate::handler::{Command, Response};
 

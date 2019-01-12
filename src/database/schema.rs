@@ -17,7 +17,18 @@ table! {
     }
 }
 
+table! {
+    winerrors (id) {
+        id -> Integer,
+        code -> Text,
+        error_type -> Text,
+        name -> Text,
+        description -> Text,
+    }
+}
+
 allow_tables_to_appear_in_same_query!(
     factoids,
     qotd,
+    winerrors,
 );

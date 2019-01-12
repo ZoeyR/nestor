@@ -1,13 +1,15 @@
-use self::models::{Factoid, FactoidEnum, NewFactoid, NewQuote, Quote};
-use self::rustbot_model::RFactoid;
+use self::import_models::RFactoid;
+use self::models::{
+    Factoid, FactoidEnum, NewFactoid, NewQuote, NewWinError, Quote, WinError, WinErrorVariant,
+};
 
 use chrono::offset::Utc;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use failure::Error;
 
+pub mod import_models;
 pub mod models;
-pub mod rustbot_model;
 pub mod schema;
 
 pub struct Db {
@@ -90,6 +92,59 @@ impl Db {
 
         diesel::insert_into(qotd::table)
             .values(&new_quote)
+            .execute(&self.connection)?;
+
+        Ok(())
+    }
+
+    pub fn get_error_by_code(
+        &self,
+        error_code: u32,
+        variant: WinErrorVariant,
+    ) -> Result<Option<WinError>, Error> {
+        use self::schema::winerrors::dsl::*;
+
+        winerrors
+            .filter(error_type.eq(variant))
+            .filter(code.eq(error_code.to_string()))
+            .first::<WinError>(&self.connection)
+            .optional()
+            .map_err(From::from)
+    }
+
+    pub fn get_error_by_name(
+        &self,
+        error_name: &str,
+        variant: WinErrorVariant,
+    ) -> Result<Option<WinError>, Error> {
+        use self::schema::winerrors::dsl::*;
+
+        winerrors
+            .filter(error_type.eq(variant))
+            .filter(name.eq(error_name))
+            .first::<WinError>(&self.connection)
+            .optional()
+            .map_err(From::from)
+    }
+
+    pub fn create_error(
+        &self,
+        error_code: u32,
+        error_type: WinErrorVariant,
+        name: &str,
+        description: &str,
+    ) -> Result<(), Error> {
+        use self::schema::winerrors;
+
+        let new_error = NewWinError {
+            code: &error_code.to_string(),
+            error_type,
+            name,
+            description,
+        };
+
+        diesel::insert_into(winerrors::table)
+            .values(&new_error)
             .execute(&self.connection)?;
 
         Ok(())

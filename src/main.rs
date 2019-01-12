@@ -5,17 +5,19 @@
 extern crate diesel;
 
 use std::fs::File;
+use std::io::Read;
 use std::io::{BufRead, BufReader, Write};
 use std::rc::Rc;
 
-use crate::config::{Args, Command};
-use crate::database::rustbot_model::RFactoid;
+use crate::config::{Args, Command, ImportType};
+use crate::database::import_models::{RFactoid, WinError};
+use crate::database::models::WinErrorVariant;
 use crate::handler::handle_message;
 
-use tokio_async_await::compat::backward;
 use irc::client::ext::ClientExt;
 use irc::client::reactor::IrcReactor;
 use structopt::StructOpt;
+use tokio_async_await::compat::backward;
 
 mod commands;
 mod config;
@@ -36,20 +38,57 @@ fn main() {
                 writeln!(output, "{}", factoid_json).unwrap();
             }
         }
-        Command::Import { file } => {
+        Command::Import { file, import_type } => {
             let input = File::open(file).unwrap();
-            let input = BufReader::new(input);
+            let mut input = BufReader::new(input);
 
-            for line in input.lines() {
-                let line = line.unwrap();
-                let rfactoid: RFactoid = match serde_json::from_str(&line) {
-                    Ok(rfactoid) => rfactoid,
-                    Err(err) => {
-                        println!("{}", err);
-                        continue;
+            match import_type {
+                ImportType::Factoid => {
+                    for line in input.lines() {
+                        let line = line.unwrap();
+                        let rfactoid: RFactoid = match serde_json::from_str(&line) {
+                            Ok(rfactoid) => rfactoid,
+                            Err(err) => {
+                                println!("{}", err);
+                                continue;
+                            }
+                        };
+                        db.create_from_rfactoid(&rfactoid).unwrap();
                     }
-                };
-                db.create_from_rfactoid(&rfactoid).unwrap();
+                }
+                ImportType::HResult => {
+                    let mut buffer = String::new();
+                    input.read_to_string(&mut buffer).unwrap();
+                    let errors: Vec<WinError> = serde_json::from_str(&buffer).unwrap();
+
+                    for error in errors {
+                        let code = u32::from_str_radix(&error.code[2..], 16).unwrap();
+                        db.create_error(code, WinErrorVariant::HResult, &error.name, &error.desc)
+                            .unwrap()
+                    }
+                }
+                ImportType::NtResult => {
+                    let mut buffer = String::new();
+                    input.read_to_string(&mut buffer).unwrap();
+                    let errors: Vec<WinError> = serde_json::from_str(&buffer).unwrap();
+
+                    for error in errors {
+                        let code = u32::from_str_radix(&error.code[2..], 16).unwrap();
+                        db.create_error(code, WinErrorVariant::NtStatus, &error.name, &error.desc)
+                            .unwrap()
+                    }
+                }
+                ImportType::Win32 => {
+                    let mut buffer = String::new();
+                    input.read_to_string(&mut buffer).unwrap();
+                    let errors: Vec<WinError> = serde_json::from_str(&buffer).unwrap();
+
+                    for error in errors {
+                        let code = u32::from_str_radix(&error.code[2..], 16).unwrap();
+                        db.create_error(code, WinErrorVariant::Win32, &error.name, &error.desc)
+                            .unwrap()
+                    }
+                }
             }
         }
         Command::Launch {} => {

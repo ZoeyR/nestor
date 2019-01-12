@@ -24,6 +24,13 @@ pub struct RFactoidEditor {
     pub hostname: String,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct WinError {
+    pub code: String,
+    pub name: String,
+    pub desc: String,
+}
+
 impl From<Factoid> for RFactoid {
     fn from(factoid: Factoid) -> Self {
         let time = DateTime::<Utc>::from_utc(factoid.timestamp, Utc)
