@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 futures = "0.1.25"
-irc = { git = "https://github.com/dgriffen/irc", branch = "dev/dgriffen/non-sequential-handler" }
+irc = "0.13"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.0", features = ["sqlite", "chrono"] }
 failure = "0.1"

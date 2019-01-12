@@ -4,6 +4,7 @@
 #[macro_use]
 extern crate diesel;
 
+use futures::future::Future;
 use std::fs::File;
 use std::io::Read;
 use std::io::{BufRead, BufReader, Write};
@@ -110,6 +111,7 @@ fn main() {
             let handler = Rc::new(handler::Handler::new(db));
 
             let mut reactor = IrcReactor::new().unwrap();
+            let handle = reactor.inner_handle();
             let client = reactor
                 .prepare_client_and_connect(&config.irc_config)
                 .unwrap();
@@ -118,7 +120,9 @@ fn main() {
                 let handler = handler.clone();
                 let config = config.clone();
                 let future = handle_message(client.clone(), message, config, handler);
-                backward::Compat::new(future)
+                handle.spawn(backward::Compat::new(future).map_err(|_| ()));
+
+                Ok(())
             });
 
             reactor.run().unwrap();
