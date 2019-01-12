@@ -28,3 +28,4 @@ database_url = "rustybot.sqlite"
 command_indicator = ["!"]
 alias_depth = 3
 contact = "abuse@example.com"
+github_auth = { username = "user", password = "password" }

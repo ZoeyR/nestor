@@ -22,6 +22,13 @@ pub struct BotSettings {
     pub command_indicator: Vec<String>,
     pub contact: String,
     pub alias_depth: u32,
+    pub github_auth: GithubAuth,
+}
+
+#[derive(Deserialize)]
+pub struct GithubAuth {
+    pub username: String,
+    pub password: String,
 }
 
 impl Config {
