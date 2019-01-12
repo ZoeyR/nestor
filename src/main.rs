@@ -62,9 +62,14 @@ fn main() {
                     let errors: Vec<WinError> = serde_json::from_str(&buffer).unwrap();
 
                     for error in errors {
-                        let code = u32::from_str_radix(&error.code[2..], 16).unwrap();
-                        db.create_error(code, WinErrorVariant::HResult, &error.name, &error.desc)
-                            .unwrap()
+                        let code = u32::from_str_radix(&error.code.trim()[2..], 16).unwrap();
+                        db.create_error(
+                            code,
+                            WinErrorVariant::HResult,
+                            &error.name.trim(),
+                            &error.desc.trim(),
+                        )
+                        .unwrap()
                     }
                 }
                 ImportType::NtResult => {
@@ -73,9 +78,14 @@ fn main() {
                     let errors: Vec<WinError> = serde_json::from_str(&buffer).unwrap();
 
                     for error in errors {
-                        let code = u32::from_str_radix(&error.code[2..], 16).unwrap();
-                        db.create_error(code, WinErrorVariant::NtStatus, &error.name, &error.desc)
-                            .unwrap()
+                        let code = u32::from_str_radix(&error.code.trim()[2..], 16).unwrap();
+                        db.create_error(
+                            code,
+                            WinErrorVariant::NtStatus,
+                            &error.name.trim(),
+                            &error.desc.trim(),
+                        )
+                        .unwrap()
                     }
                 }
                 ImportType::Win32 => {
@@ -84,9 +94,14 @@ fn main() {
                     let errors: Vec<WinError> = serde_json::from_str(&buffer).unwrap();
 
                     for error in errors {
-                        let code = u32::from_str_radix(&error.code[2..], 16).unwrap();
-                        db.create_error(code, WinErrorVariant::Win32, &error.name, &error.desc)
-                            .unwrap()
+                        let code = u32::from_str_radix(&error.code.trim()[2..], 16).unwrap();
+                        db.create_error(
+                            code,
+                            WinErrorVariant::Win32,
+                            &error.name.trim(),
+                            &error.desc.trim(),
+                        )
+                        .unwrap()
                     }
                 }
             }
