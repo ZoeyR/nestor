@@ -6,7 +6,6 @@ use irc::client::IrcClient;
 use state::Container;
 
 pub struct Request<'r> {
-    pub(crate) response: &'r str,
     pub(crate) config: &'r Config,
     pub(crate) command: Command<'r>,
     pub(crate) state: &'r Container,
@@ -16,8 +15,8 @@ impl<'r> Request<'r> {
     pub fn from_message<'c>(
         nestor: &'r Nestor,
         client: &'c IrcClient,
-        message: Message,
-    ) -> Option<Self> {
+        message: &'r Message,
+    ) -> Option<(&'r str, Self)> {
         let (default_target, msg) = match message.command {
             irc::proto::command::Command::PRIVMSG(ref target, ref msg) => (target, msg),
             _ => return None,
@@ -29,12 +28,14 @@ impl<'r> Request<'r> {
 
         let response = message.response_target().unwrap_or(default_target);
 
-        Some(Request {
+        Some((
             response,
-            config: &nestor.config,
-            command,
-            state: &nestor.state,
-        })
+            Request {
+                config: &nestor.config,
+                command,
+                state: &nestor.state,
+            },
+        ))
     }
 }
 

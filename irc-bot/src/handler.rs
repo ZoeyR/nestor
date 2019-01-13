@@ -21,6 +21,12 @@ impl CommandRouter {
         }
     }
 
+    pub fn add_handlers(&mut self, handlers: Vec<(&'static str, Box<dyn CommandHandler>)>) {
+        for (label, handler) in handlers {
+            self.commands.insert(label, handler);
+        }
+    }
+
     pub async fn route<'r>(&'r self, request: Request<'r>) -> Result<Response, Error> {
         if request
             .config

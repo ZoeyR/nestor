@@ -1,9 +1,12 @@
 #![feature(await_macro, async_await, futures_api)]
 
+use failure::Error;
+use irc::client::IrcClient;
+use irc::proto::Message;
 use std::rc::Rc;
 
 use crate::config::Config;
-use crate::handler::{CommandRouter, Response};
+use crate::handler::{CommandHandler, CommandRouter, Response};
 use crate::request::Request;
 
 use futures::future::Future;
@@ -12,9 +15,9 @@ use irc::client::reactor::IrcReactor;
 use state::Container;
 use tokio_async_await::compat::backward;
 
-mod config;
-mod handler;
-mod request;
+pub mod config;
+pub mod handler;
+pub mod request;
 
 pub struct Nestor {
     state: Container,
@@ -38,6 +41,12 @@ impl Nestor {
         self
     }
 
+    pub fn route(mut self, handlers: Vec<(&'static str, Box<dyn CommandHandler>)>) -> Self {
+        self.router.add_handlers(handlers);
+
+        self
+    }
+
     pub fn activate(self) {
         let nestor = Rc::new(self);
         let mut reactor = IrcReactor::new().unwrap();
@@ -47,38 +56,29 @@ impl Nestor {
             .unwrap();
         client.identify().unwrap();
         reactor.register_client_with_handler(client, move |client, message| {
-            let nestor = nestor.clone();
-            let client = client.clone();
-            if let Some(request) = Request::from_message(&nestor, &client, message) {
-                let future = async {
-                    let result = match await!(self.router.route(request)) {
-                        Ok(response) => response,
-                        Err(err) => {
-                            println!("{:?}", err);
-                            Response::Say("unexpected error when executing command".into())
-                        }
-                    };
-
-                    match result {
-                        Response::Say(message) => {
-                            client.send_privmsg(request.response, &message).unwrap()
-                        }
-                        Response::Act(message) => {
-                            client.send_action(request.response, &message).unwrap()
-                        }
-                        Response::Notice(message) => {
-                            client.send_notice(request.response, &message).unwrap()
-                        }
-                        Response::None => {}
-                    }
-
-                    Ok(())
-                };
-
-                handle.spawn(backward::Compat::new(future));
-            }
-
+            let future = handle_message(nestor.clone(), client.clone(), message);
+            handle.spawn(backward::Compat::new(future));
             Ok(())
         });
+
+        reactor.run().unwrap();
     }
+}
+
+async fn handle_message(nestor: Rc<Nestor>, client: IrcClient, message: Message) -> Result<(), ()> {
+    if let Some((responder, request)) = Request::from_message(&nestor, &client, &message) {
+        let response = match await!(nestor.router.route(request)) {
+            Ok(response) => response,
+            Err(_) => Response::Say("unexpected error when executing command".into()),
+        };
+
+        match response {
+            Response::Say(message) => client.send_privmsg(responder, &message).unwrap(),
+            Response::Act(message) => client.send_action(responder, &message).unwrap(),
+            Response::Notice(message) => client.send_notice(responder, &message).unwrap(),
+            Response::None => {}
+        }
+    }
+
+    Ok(())
 }
