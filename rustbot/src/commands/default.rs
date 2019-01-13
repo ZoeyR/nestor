@@ -1,8 +1,8 @@
-use crate::config::Config;
 use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
-use crate::handler::{Command, Response};
 use failure::Error;
+use irc_bot::config::Config;
+use irc_bot::handler::{Command, Response};
 
 pub async fn user_defined<'a>(
     command: Command<'a>,
@@ -31,7 +31,7 @@ pub async fn user_defined<'a>(
                 Response::Notice(format!("unknown factoid '{}'", command.command_str))
             }
             FactoidEnum::Alias => process_alias(factoid, db)?,
-            _ => Response::from_intent(factoid.intent, factoid.description),
+            _ => factoid.intent.to_response(factoid.description),
         },
         None if num_args == 0 => {
             Response::Notice(format!("unknown factoid '{}'", command.command_str))
@@ -66,7 +66,7 @@ fn process_alias(mut factoid: Factoid, db: &Db) -> Result<Response, Error> {
                     )));
                 }
             },
-            _ => return Ok(Response::from_intent(factoid.intent, factoid.description)),
+            _ => return Ok(factoid.intent.to_response(factoid.description)),
         }
     }
 

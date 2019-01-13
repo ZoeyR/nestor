@@ -1,6 +1,6 @@
-use crate::config::Config;
 use crate::database::Db;
-use crate::handler::{Command, Response};
+use irc_bot::config::Config;
+use irc_bot::handler::{Command, Response};
 
 use failure::Error;
 use reqwest::header::{ACCEPT, USER_AGENT};

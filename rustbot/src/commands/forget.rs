@@ -1,7 +1,7 @@
-use crate::config::{is_admin, Config};
 use crate::database::models::FactoidEnum;
 use crate::database::Db;
-use crate::handler::{Command, Response};
+use irc_bot::config::{is_admin, Config};
+use irc_bot::handler::{Command, Response};
 
 use failure::Error;
 

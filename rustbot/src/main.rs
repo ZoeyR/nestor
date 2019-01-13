@@ -1,5 +1,5 @@
 #![allow(proc_macro_derive_resolution_fallback)]
-#![feature(await_macro, async_await, futures_api)]
+#![feature(await_macro, async_await, futures_api, proc_macro_hygiene)]
 
 #[macro_use]
 extern crate diesel;
@@ -13,22 +13,22 @@ use std::rc::Rc;
 use crate::config::{Args, Command, ImportType};
 use crate::database::import_models::{RFactoid, WinError};
 use crate::database::models::WinErrorVariant;
-use crate::handler::handle_message;
 
 use irc::client::ext::ClientExt;
 use irc::client::reactor::IrcReactor;
+use irc_bot::Nestor;
+use irc_bot_codegen::routes;
 use structopt::StructOpt;
 use tokio_async_await::compat::backward;
 
 mod commands;
 mod config;
 mod database;
-mod handler;
 
 fn main() {
     let args = Args::from_args();
-    let config = Rc::new(config::Config::load(args.config).unwrap());
-    let db = database::Db::open(&config.bot_settings.database_url).unwrap();
+
+    let db = database::Db::open("rustybot.sqlite").unwrap();
 
     match args.command {
         Command::Export { file } => {
@@ -108,24 +108,11 @@ fn main() {
             }
         }
         Command::Launch {} => {
-            let handler = Rc::new(handler::Handler::new(db));
-
-            let mut reactor = IrcReactor::new().unwrap();
-            let handle = reactor.inner_handle();
-            let client = reactor
-                .prepare_client_and_connect(&config.irc_config)
-                .unwrap();
-            client.identify().unwrap();
-            reactor.register_client_with_handler(client, move |client, message| {
-                let handler = handler.clone();
-                let config = config.clone();
-                let future = handle_message(client.clone(), message, config, handler);
-                handle.spawn(backward::Compat::new(future).map_err(|_| ()));
-
-                Ok(())
-            });
-
-            reactor.run().unwrap();
+            let mutex = std::sync::Mutex::new(db);
+            Nestor::build()
+                .manage(mutex)
+                .route(routes![commands::crate_info::crate_info,])
+                .activate();
         }
     }
 }

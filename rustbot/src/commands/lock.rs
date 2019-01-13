@@ -1,10 +1,14 @@
-use crate::config::{Config, is_admin};
 use crate::database::Db;
-use crate::handler::{Command, Response};
+use irc_bot::config::{is_admin, Config};
+use irc_bot::handler::{Command, Response};
 
 use failure::Error;
 
-pub async fn lock<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) -> Result<Response, Error> {
+pub async fn lock<'a>(
+    command: Command<'a>,
+    config: &'a Config,
+    db: &'a Db,
+) -> Result<Response, Error> {
     if !is_admin(command.source_nick, config) {
         return Ok(Response::Notice("Only an admin can lock a factoid".into()));
     }
@@ -34,7 +38,11 @@ pub async fn lock<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) -> R
     })
 }
 
-pub async fn unlock<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) -> Result<Response, Error> {
+pub async fn unlock<'a>(
+    command: Command<'a>,
+    config: &'a Config,
+    db: &'a Db,
+) -> Result<Response, Error> {
     if !is_admin(command.source_nick, config) {
         return Ok(Response::Notice(
             "Only an admin can unlock a factoid".into(),

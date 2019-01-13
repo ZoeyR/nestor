@@ -1,7 +1,7 @@
-use crate::config::Config;
 use crate::database::models::WinErrorVariant;
 use crate::database::Db;
-use crate::handler::{Command, Response};
+use irc_bot::config::Config;
+use irc_bot::handler::{Command, Response};
 
 use failure::Error;
 

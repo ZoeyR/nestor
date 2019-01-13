@@ -1,14 +1,18 @@
 use std::marker::PhantomData;
 use std::ops::Deref;
 
-use crate::config::{Config, is_admin};
 use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
-use crate::handler::{Command, Response};
+use irc_bot::config::{is_admin, Config};
+use irc_bot::handler::{Command, Response};
 
 use failure::Error;
 
-pub async fn learn<'a>(command: Command<'a>, config: &'a Config, db: &'a Db) -> Result<Response, Error> {
+pub async fn learn<'a>(
+    command: Command<'a>,
+    config: &'a Config,
+    db: &'a Db,
+) -> Result<Response, Error> {
     let operation_index = match command
         .arguments
         .iter()
