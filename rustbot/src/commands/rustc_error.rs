@@ -1,14 +1,9 @@
-use crate::database::Db;
-use irc_bot::config::Config;
-use irc_bot::handler::{Command, Response};
-
 use failure::Error;
+use irc_bot::handler::{Command, Response};
+use irc_bot_codegen::command;
 
-pub async fn rustc_error<'a>(
-    command: Command<'a>,
-    _: &'a Config,
-    _: &'a Db,
-) -> Result<Response, Error> {
+#[command("error")]
+pub async fn rustc_error<'a>(command: &'a Command<'a>) -> Result<Response, Error> {
     if command.arguments.len() != 1 {
         return Ok(Response::Notice(
             "Invalid command format, please use ~error <error code>".into(),

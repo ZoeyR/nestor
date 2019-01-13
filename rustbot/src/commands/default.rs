@@ -1,19 +1,22 @@
 use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
-use failure::Error;
-use irc_bot::config::Config;
-use irc_bot::handler::{Command, Response};
 
+use failure::Error;
+use irc_bot::handler::{Command, Response};
+use irc_bot::request::State;
+use irc_bot_codegen::command;
+
+#[command]
 pub async fn user_defined<'a>(
-    command: Command<'a>,
-    _config: &'a Config,
-    db: &'a Db,
+    command: &'a Command<'a>,
+    db: State<'a, Db>,
 ) -> Result<Response, Error> {
     let num_args = command.arguments.len();
 
-    let full_command = std::iter::once(command.command_str)
-        .chain(command.arguments)
-        .collect::<Vec<_>>();
+    let full_command: Vec<_> = std::iter::once(&command.command_str)
+        .chain(command.arguments.as_slice())
+        .map(|s| *s)
+        .collect();
 
     let (name, label) = if full_command.len() > 2 && full_command[full_command.len() - 2] == "@" {
         (
@@ -30,7 +33,7 @@ pub async fn user_defined<'a>(
             FactoidEnum::Forget => {
                 Response::Notice(format!("unknown factoid '{}'", command.command_str))
             }
-            FactoidEnum::Alias => process_alias(factoid, db)?,
+            FactoidEnum::Alias => process_alias(factoid, &db)?,
             _ => factoid.intent.to_response(factoid.description),
         },
         None if num_args == 0 => {

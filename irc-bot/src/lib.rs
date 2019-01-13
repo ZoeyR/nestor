@@ -35,13 +35,17 @@ impl Nestor {
         }
     }
 
-    pub fn manage<T: Send + Sync + 'static>(self, state: T) -> Self {
-        self.state.set::<T>(state);
+    pub fn manage<T: Send + 'static, F>(self, state: F) -> Self
+    where
+        T: Send + 'static,
+        F: Fn() -> T + 'static,
+    {
+        self.state.set_local(state);
 
         self
     }
 
-    pub fn route(mut self, handlers: Vec<(&'static str, Box<dyn CommandHandler>)>) -> Self {
+    pub fn route(mut self, handlers: Vec<(Option<&'static str>, Box<dyn CommandHandler>)>) -> Self {
         self.router.add_handlers(handlers);
 
         self

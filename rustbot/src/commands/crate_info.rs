@@ -1,4 +1,4 @@
-use crate::database::Db;
+use std::ops::Deref;
 
 use failure::Error;
 use irc_bot::config::Config;
@@ -8,9 +8,6 @@ use reqwest::header::USER_AGENT;
 use reqwest::r#async::Client;
 use reqwest::StatusCode;
 use serde::Deserialize;
-use std::future::Future;
-use std::ops::Deref;
-use std::pin::Pin;
 use tokio::await;
 
 #[derive(Deserialize)]
@@ -27,7 +24,7 @@ struct Crate {
     documentation: Option<String>,
 }
 
-#[command]
+#[command("crate")]
 pub async fn crate_info<'a>(
     command: &'a Command<'a>,
     config: &'a Config,

@@ -3,15 +3,18 @@ use std::ops::Deref;
 
 use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
-use irc_bot::config::{is_admin, Config};
-use irc_bot::handler::{Command, Response};
 
 use failure::Error;
+use irc_bot::config::{is_admin, Config};
+use irc_bot::handler::{Command, Response};
+use irc_bot::request::State;
+use irc_bot_codegen::command;
 
+#[command("learn")]
 pub async fn learn<'a>(
-    command: Command<'a>,
+    command: &'a Command<'a>,
     config: &'a Config,
-    db: &'a Db,
+    db: State<'a, Db>,
 ) -> Result<Response, Error> {
     let operation_index = match command
         .arguments
@@ -59,7 +62,7 @@ pub async fn learn<'a>(
             &actual_factoid,
             config,
             existing_factoid,
-            db,
+            &db,
             FactoidEnum::Say,
             EditOptions::MustNot(
                 || raw_description.trim(),
@@ -71,7 +74,7 @@ pub async fn learn<'a>(
             &actual_factoid,
             config,
             existing_factoid,
-            db,
+            &db,
             FactoidEnum::Say,
             EditOptions::MustNot(
                 || format!("{} is {}", actual_factoid, raw_description),
@@ -83,7 +86,7 @@ pub async fn learn<'a>(
             &actual_factoid,
             config,
             existing_factoid,
-            db,
+            &db,
             FactoidEnum::Say,
             EditOptions::Must(
                 |factoid: &Factoid| format!("{} {}", factoid.description, raw_description.trim()),
@@ -95,7 +98,7 @@ pub async fn learn<'a>(
             &actual_factoid,
             config,
             existing_factoid,
-            db,
+            &db,
             FactoidEnum::Say,
             EditOptions::Optional(
                 |_: &Factoid| raw_description.trim(),
@@ -107,7 +110,7 @@ pub async fn learn<'a>(
             &actual_factoid,
             config,
             existing_factoid,
-            db,
+            &db,
             FactoidEnum::Act,
             EditOptions::MustNot(
                 || raw_description.trim(),
@@ -119,7 +122,7 @@ pub async fn learn<'a>(
             &actual_factoid,
             config,
             existing_factoid,
-            db,
+            &db,
             FactoidEnum::Alias,
             EditOptions::MustNot(
                 || raw_description.trim(),

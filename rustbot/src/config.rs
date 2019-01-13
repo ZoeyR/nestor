@@ -1,9 +1,5 @@
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use failure::Error;
-use irc::client::data::Config as IrcConfig;
-use serde::Deserialize;
 use structopt::StructOpt;
 
 #[derive(StructOpt)]

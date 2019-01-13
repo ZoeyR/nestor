@@ -4,6 +4,7 @@ use crate::Nestor;
 use irc::client::prelude::Message;
 use irc::client::IrcClient;
 use state::Container;
+use std::ops::Deref;
 
 pub struct Request<'r> {
     pub(crate) config: &'r Config,
@@ -39,7 +40,14 @@ impl<'r> Request<'r> {
     }
 }
 
-pub struct State<'r, T: Send + Sync + 'static>(&'r T);
+pub struct State<'r, T: Send + 'static>(&'r T);
+
+impl<'r, T: Send + 'static> Deref for State<'r, T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
 
 pub trait FromRequest<'a, 'r>: Sized {
     fn from_request(request: &'a Request<'r>) -> Option<Self>;
@@ -57,8 +65,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a Command<'r> {
     }
 }
 
-impl<'a, 'r, T: Send + Sync + 'static> FromRequest<'a, 'r> for State<'r, T> {
+impl<'a, 'r, T: Send + 'static> FromRequest<'a, 'r> for State<'r, T> {
     fn from_request(request: &'a Request<'r>) -> Option<Self> {
-        request.state.try_get::<T>().map(State)
+        request.state.try_get_local::<T>().map(State)
     }
 }

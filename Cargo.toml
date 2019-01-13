@@ -4,5 +4,4 @@ members = [
     "rustbot",
     "irc-bot",
     "irc-bot-codegen",
-    "irc-bot-types",
 ]

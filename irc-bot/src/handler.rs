@@ -12,22 +12,28 @@ use irc::client::IrcClient;
 
 pub(crate) struct CommandRouter {
     commands: HashMap<&'static str, Box<dyn CommandHandler>>,
+    default: Option<Box<dyn CommandHandler>>,
 }
 
 impl CommandRouter {
     pub fn new() -> Self {
         CommandRouter {
             commands: HashMap::new(),
+            default: None,
         }
     }
 
-    pub fn add_handlers(&mut self, handlers: Vec<(&'static str, Box<dyn CommandHandler>)>) {
+    pub fn add_handlers(&mut self, handlers: Vec<(Option<&'static str>, Box<dyn CommandHandler>)>) {
         for (label, handler) in handlers {
-            self.commands.insert(label, handler);
+            if let Some(label) = label {
+                self.commands.insert(label, handler);
+            } else if self.default.is_none() {
+                self.default = Some(handler);
+            }
         }
     }
 
-    pub async fn route<'r>(&'r self, request: Request<'r>) -> Result<Response, Error> {
+    pub async fn route<'r>(&'r self, mut request: Request<'r>) -> Result<Response, Error> {
         if request
             .config
             .bot_settings
@@ -38,6 +44,8 @@ impl CommandRouter {
         }
 
         if let Some(handler) = self.commands.get(request.command.command_str) {
+            await!(handler.handle(&request))
+        } else if let Some(handler) = &self.default {
             await!(handler.handle(&request))
         } else {
             Ok(Response::None)

@@ -10,6 +10,6 @@ futures = "0.1.25"
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.4"
 irc = "0.13"
-state = "0.4"
+state = { version = "0.4", features = ["tls"] }
 tokio = { version = "0.1.13", features = ["async-await-preview"] }
 tokio-async-await = "0.1.4"

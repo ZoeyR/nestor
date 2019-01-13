@@ -1,16 +1,14 @@
 use crate::database::Db;
-use irc_bot::config::Config;
-use irc_bot::handler::{Command, Response};
 
 use failure::Error;
+use irc_bot::handler::{Command, Response};
+use irc_bot::request::State;
+use irc_bot_codegen::command;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
-pub async fn qotd<'a>(
-    command: Command<'a>,
-    _config: &'a Config,
-    db: &'a Db,
-) -> Result<Response, Error> {
+#[command("qotd")]
+pub async fn qotd<'a>(command: &'a Command<'a>, db: State<'a, Db>) -> Result<Response, Error> {
     let mut rng = thread_rng();
 
     Ok(match command.arguments.len() {

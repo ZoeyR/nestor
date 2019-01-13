@@ -4,22 +4,17 @@
 #[macro_use]
 extern crate diesel;
 
-use futures::future::Future;
 use std::fs::File;
 use std::io::Read;
 use std::io::{BufRead, BufReader, Write};
-use std::rc::Rc;
 
 use crate::config::{Args, Command, ImportType};
 use crate::database::import_models::{RFactoid, WinError};
 use crate::database::models::WinErrorVariant;
 
-use irc::client::ext::ClientExt;
-use irc::client::reactor::IrcReactor;
 use irc_bot::Nestor;
 use irc_bot_codegen::routes;
 use structopt::StructOpt;
-use tokio_async_await::compat::backward;
 
 mod commands;
 mod config;
@@ -107,11 +102,24 @@ fn main() {
                 }
             }
         }
+
         Command::Launch {} => {
-            let mutex = std::sync::Mutex::new(db);
             Nestor::build()
-                .manage(mutex)
-                .route(routes![commands::crate_info::crate_info,])
+                .manage(|| database::Db::open("rustybot.sqlite").unwrap())
+                .route(routes![
+                    commands::crate_info::crate_info,
+                    commands::forget::forget,
+                    commands::github::rfc,
+                    commands::learn::learn,
+                    commands::lock::lock,
+                    commands::lock::unlock,
+                    commands::qotd::qotd,
+                    commands::rustc_error::rustc_error,
+                    commands::windows_error::hresult,
+                    commands::windows_error::nt_status,
+                    commands::windows_error::win32,
+                    commands::default::user_defined,
+                ])
                 .activate();
         }
     }
