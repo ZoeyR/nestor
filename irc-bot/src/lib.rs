@@ -1,17 +1,15 @@
 #![feature(await_macro, async_await, futures_api)]
 
-use failure::Error;
-use irc::client::IrcClient;
-use irc::proto::Message;
 use std::rc::Rc;
 
 use crate::config::Config;
 use crate::handler::{CommandHandler, CommandRouter, Response};
 use crate::request::Request;
 
-use futures::future::Future;
 use irc::client::ext::ClientExt;
 use irc::client::reactor::IrcReactor;
+use irc::client::IrcClient;
+use irc::proto::Message;
 use state::Container;
 use tokio_async_await::compat::backward;
 

@@ -4,11 +4,8 @@ use std::pin::Pin;
 
 use crate::config::Config;
 use crate::request::Request;
-use crate::Nestor;
 
 use failure::Error;
-use irc::client::prelude::Message;
-use irc::client::IrcClient;
 
 pub(crate) struct CommandRouter {
     commands: HashMap<&'static str, Box<dyn CommandHandler>>,
@@ -33,7 +30,7 @@ impl CommandRouter {
         }
     }
 
-    pub async fn route<'r>(&'r self, mut request: Request<'r>) -> Result<Response, Error> {
+    pub async fn route<'r>(&'r self, request: Request<'r>) -> Result<Response, Error> {
         if request
             .config
             .bot_settings

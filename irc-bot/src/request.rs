@@ -1,10 +1,12 @@
+use std::ops::Deref;
+
 use crate::config::Config;
 use crate::handler::Command;
 use crate::Nestor;
+
 use irc::client::prelude::Message;
 use irc::client::IrcClient;
 use state::Container;
-use std::ops::Deref;
 
 pub struct Request<'r> {
     pub(crate) config: &'r Config,
