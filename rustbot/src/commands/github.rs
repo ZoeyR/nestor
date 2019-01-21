@@ -1,8 +1,7 @@
-use crate::config::Config;
-use crate::database::Db;
-use crate::handler::{Command, Response};
-
 use failure::Error;
+use irc_bot::config::Config;
+use irc_bot::handler::{Command, Response};
+use irc_bot_codegen::command;
 use reqwest::header::{ACCEPT, USER_AGENT};
 use reqwest::r#async::Client;
 use reqwest::StatusCode;
@@ -19,11 +18,8 @@ struct PullRequest {
     pub merged: bool,
 }
 
-pub async fn rfc<'a>(
-    command: Command<'a>,
-    config: &'a Config,
-    _: &'a Db,
-) -> Result<Response, Error> {
+#[command("rfc")]
+pub async fn rfc<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<Response, Error> {
     let rfc = match command.arguments.get(0).map(|arg| arg.parse::<u32>()) {
         Some(Ok(rfc)) => rfc,
         Some(Err(_)) => return Ok(Response::Notice("RFC must be a number.".into())),

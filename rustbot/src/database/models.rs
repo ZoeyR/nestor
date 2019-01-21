@@ -13,6 +13,7 @@ use diesel::serialize::{self, Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
 use failure::{format_err, Error};
+use irc_bot::handler::Response;
 
 #[derive(Queryable)]
 pub struct Factoid {
@@ -99,6 +100,16 @@ pub enum WinErrorVariant {
     HResult,
     NtStatus,
     Win32,
+}
+
+impl FactoidEnum {
+    pub fn to_response(&self, description: String) -> Response {
+        match self {
+            FactoidEnum::Act => Response::Act(description),
+            FactoidEnum::Say => Response::Say(description),
+            _ => Response::None,
+        }
+    }
 }
 
 impl ToSql<Text, Sqlite> for FactoidEnum {

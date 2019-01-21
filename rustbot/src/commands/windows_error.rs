@@ -1,36 +1,28 @@
-use crate::config::Config;
 use crate::database::models::WinErrorVariant;
 use crate::database::Db;
-use crate::handler::{Command, Response};
 
 use failure::Error;
+use irc_bot::handler::{Command, Response};
+use irc_bot::request::State;
+use irc_bot_codegen::command;
 
-pub async fn hresult<'a>(
-    command: Command<'a>,
-    _config: &'a Config,
-    db: &'a Db,
-) -> Result<Response, Error> {
-    await!(generic_error(command, WinErrorVariant::HResult, db))
+#[command("hresult")]
+pub async fn hresult<'a>(command: &'a Command<'a>, db: State<'a, Db>) -> Result<Response, Error> {
+    await!(generic_error(command, WinErrorVariant::HResult, &db))
 }
 
-pub async fn nt_status<'a>(
-    command: Command<'a>,
-    _config: &'a Config,
-    db: &'a Db,
-) -> Result<Response, Error> {
-    await!(generic_error(command, WinErrorVariant::NtStatus, db))
+#[command("ntstatus")]
+pub async fn nt_status<'a>(command: &'a Command<'a>, db: State<'a, Db>) -> Result<Response, Error> {
+    await!(generic_error(command, WinErrorVariant::NtStatus, &db))
 }
 
-pub async fn win32<'a>(
-    command: Command<'a>,
-    _config: &'a Config,
-    db: &'a Db,
-) -> Result<Response, Error> {
-    await!(generic_error(command, WinErrorVariant::Win32, db))
+#[command("win32")]
+pub async fn win32<'a>(command: &'a Command<'a>, db: State<'a, Db>) -> Result<Response, Error> {
+    await!(generic_error(command, WinErrorVariant::Win32, &db))
 }
 
 async fn generic_error<'a>(
-    command: Command<'a>,
+    command: &'a Command<'a>,
     variant: WinErrorVariant,
     db: &'a Db,
 ) -> Result<Response, Error> {

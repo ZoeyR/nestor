@@ -1,13 +1,13 @@
-use crate::config::Config;
-use crate::database::Db;
-use crate::handler::{Command, Response};
+use std::ops::Deref;
 
 use failure::Error;
+use irc_bot::config::Config;
+use irc_bot::handler::{Command, Response};
+use irc_bot_codegen::command;
 use reqwest::header::USER_AGENT;
 use reqwest::r#async::Client;
 use reqwest::StatusCode;
 use serde::Deserialize;
-use std::ops::Deref;
 use tokio::await;
 
 #[derive(Deserialize)]
@@ -24,10 +24,10 @@ struct Crate {
     documentation: Option<String>,
 }
 
+#[command("crate")]
 pub async fn crate_info<'a>(
-    command: Command<'a>,
+    command: &'a Command<'a>,
     config: &'a Config,
-    _: &'a Db,
 ) -> Result<Response, Error> {
     if command.arguments.len() != 1 {
         return Ok(Response::Notice(
