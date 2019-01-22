@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use failure::Error;
 use irc_bot::config::Config;
-use irc_bot::handler::{Command, Response};
+use irc_bot::handler::Command;
 use irc_bot_codegen::command;
 use reqwest::header::USER_AGENT;
 use reqwest::r#async::Client;
@@ -25,14 +25,9 @@ struct Crate {
 }
 
 #[command("crate")]
-pub async fn crate_info<'a>(
-    command: &'a Command<'a>,
-    config: &'a Config,
-) -> Result<Response, Error> {
+pub async fn crate_info<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<String, Error> {
     if command.arguments.len() != 1 {
-        return Ok(Response::Notice(
-            "Invalid command format, please use ~crate <crate>".into(),
-        ));
+        return Ok("Invalid command format, please use ~crate <crate>".into());
     }
 
     let client = Client::builder().build()?;
@@ -63,7 +58,7 @@ pub async fn crate_info<'a>(
             let crate_url = format!("https://crates.io/crates/{}", command.arguments[0]);
 
             if let Some(description) = api.info.description {
-                Ok(Response::Notice(format!(
+                Ok(format!(
                     "{} ({}) - {} -> {} <{}>",
                     api.info.name,
                     api.info.max_version,
@@ -72,9 +67,9 @@ pub async fn crate_info<'a>(
                     api.info
                         .documentation
                         .unwrap_or(format!("https://docs.rs/{}", api.info.name))
-                )))
+                ))
             } else {
-                Ok(Response::Notice(format!(
+                Ok(format!(
                     "{} ({}) -> {} <{}>",
                     api.info.name,
                     api.info.max_version,
@@ -82,16 +77,10 @@ pub async fn crate_info<'a>(
                     api.info
                         .documentation
                         .unwrap_or(format!("https://docs.rs/{}", api.info.name))
-                )))
+                ))
             }
         }
-        StatusCode::NOT_FOUND => Ok(Response::Notice(format!(
-            "crate {} does not exist",
-            command.arguments[0]
-        ))),
-        code => Ok(Response::Notice(format!(
-            "crates.io returned error code: {}",
-            code.as_u16()
-        ))),
+        StatusCode::NOT_FOUND => Ok(format!("crate {} does not exist", command.arguments[0])),
+        code => Ok(format!("crates.io returned error code: {}", code.as_u16())),
     }
 }

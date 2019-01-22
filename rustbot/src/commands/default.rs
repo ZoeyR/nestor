@@ -1,21 +1,21 @@
-use crate::database::models::{Factoid, FactoidEnum};
+use crate::database::models::FactoidEnum;
 use crate::database::Db;
 
-use failure::Error;
-use irc_bot::handler::{Command, Response};
+use irc_bot::handler::Command;
 use irc_bot::request::State;
+use irc_bot::response::{Response, Outcome};
 use irc_bot_codegen::command;
 
 #[command]
 pub async fn user_defined<'a>(
     command: &'a Command<'a>,
     db: State<'a, Db>,
-) -> Result<Response, Error> {
+) -> Outcome {
     let num_args = command.arguments.len();
 
     let full_command: Vec<_> = std::iter::once(&command.command_str)
         .chain(command.arguments.as_slice())
-        .map(|s| *s)
+        .map(|s| s.as_ref())
         .collect();
 
     let (name, label) = if full_command.len() > 2 && full_command[full_command.len() - 2] == "@" {
@@ -28,21 +28,22 @@ pub async fn user_defined<'a>(
     };
 
     println!("command is: '{}'", label);
-    let response = match db.get_factoid(&label)? {
-        Some(factoid) => match factoid.intent {
+    let response = match db.get_factoid(&label) {
+        Ok(Some(factoid)) => match factoid.intent {
             FactoidEnum::Forget => {
                 Response::Notice(format!("unknown factoid '{}'", command.command_str))
             }
-            FactoidEnum::Alias => process_alias(factoid, &db)?,
+            FactoidEnum::Alias => return Outcome::Forward(factoid.description),
             _ => factoid.intent.to_response(factoid.description),
         },
-        None if num_args == 0 => {
+        Ok(None) if num_args == 0 => {
             Response::Notice(format!("unknown factoid '{}'", command.command_str))
         }
-        None => Response::None,
+        Ok(None) => Response::None,
+        Err(err) => return Outcome::Failure(err.into()),
     };
 
-    Ok(match (name, response) {
+    Outcome::Success(match (name, response) {
         (None, response) => response,
         (Some(_), Response::None) => Response::None,
         (Some(name), Response::Say(description)) => {
@@ -55,23 +56,4 @@ pub async fn user_defined<'a>(
             Response::Notice(format!("{}: {}", name, description))
         }
     })
-}
-
-fn process_alias(mut factoid: Factoid, db: &Db) -> Result<Response, Error> {
-    for _ in 0..3 {
-        match factoid.intent {
-            FactoidEnum::Alias => match db.get_factoid(&factoid.description)? {
-                Some(next_level) => factoid = next_level,
-                None => {
-                    return Ok(Response::Notice(format!(
-                        "unknown factoid alias '{}'",
-                        factoid.description
-                    )));
-                }
-            },
-            _ => return Ok(factoid.intent.to_response(factoid.description)),
-        }
-    }
-
-    Ok(Response::Notice("alias depth too deep".into()))
 }

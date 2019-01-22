@@ -6,7 +6,7 @@ use crate::database::Db;
 
 use failure::Error;
 use irc_bot::config::{is_admin, Config};
-use irc_bot::handler::{Command, Response};
+use irc_bot::handler::Command;
 use irc_bot::request::State;
 use irc_bot_codegen::command;
 
@@ -15,7 +15,7 @@ pub async fn learn<'a>(
     command: &'a Command<'a>,
     config: &'a Config,
     db: State<'a, Db>,
-) -> Result<Response, Error> {
+) -> Result<String, Error> {
     let operation_index = match command
         .arguments
         .iter()
@@ -33,27 +33,21 @@ pub async fn learn<'a>(
     {
         Some(index) => index,
         None => {
-            return Ok(Response::Notice(
-                "Invalid command format, please use ~learn <factoid> = <description>".into(),
-            ));
+            return Ok("Invalid command format, please use ~learn <factoid> = <description>".into());
         }
     };
 
     if command.arguments.len() < 3 || operation_index == command.arguments.len() - 1 {
-        return Ok(Response::Notice(
-            "Invalid command format, please use ~learn <factoid> = <description>".into(),
-        ));
+        return Ok("Invalid command format, please use ~learn <factoid> = <description>".into());
     }
 
-    let operation = command.arguments[operation_index];
+    let operation = command.arguments[operation_index].as_ref();
     let actual_factoid = command.arguments[0..operation_index].join(" ");
     let existing_factoid = db.get_factoid(&actual_factoid)?;
     let raw_description = command.arguments[operation_index + 1..].join(" ");
 
     if actual_factoid.contains('@') {
-        return Ok(Response::Notice(
-            "factoid keys cannot contain an @ symbol".into(),
-        ));
+        return Ok("factoid keys cannot contain an @ symbol".into());
     }
 
     Ok(match operation {
@@ -129,13 +123,8 @@ pub async fn learn<'a>(
                 PhantomData::<fn(&Factoid) -> String>,
             ),
         )?,
-        format @ "~=" => Response::Notice(format!(
-            "learn format {} is currently unimplemented",
-            format
-        )),
-        _ => Response::Notice(
-            "Invalid command format, please use ~learn <factoid> = <description>".into(),
-        ),
+        format @ "~=" => format!("learn format {} is currently unimplemented", format),
+        _ => "Invalid command format, please use ~learn <factoid> = <description>".into(),
     })
 }
 
@@ -153,7 +142,7 @@ fn learn_helper<E, F, T, G>(
     db: &Db,
     intent: FactoidEnum,
     editor: EditOptions<E, F>,
-) -> Result<Response, Error>
+) -> Result<String, Error>
 where
     E: for<'factoid> Fn(&'factoid Factoid) -> G,
     F: Fn() -> T,
@@ -167,26 +156,22 @@ where
     Ok(match (factoid, editor) {
         (None, EditOptions::MustNot(fresh, _)) | (None, EditOptions::Optional(_, fresh)) => {
             db.create_factoid(nick, intent, label, &fresh(), false)?;
-            Response::Notice(format!("learned factoid: '{}'.", label))
+            format!("learned factoid: '{}'.", label)
         }
         (None, EditOptions::Must(_, _)) => {
-            Response::Notice(format!("cannot edit: '{}'. Factoid does not exist.", label))
+            format!("cannot edit: '{}'. Factoid does not exist.", label)
         }
-        (Some(_), EditOptions::MustNot(_, _)) => Response::Notice(format!(
-            "cannot rewrite '{}' since it already exists.",
-            label
-        )),
+        (Some(_), EditOptions::MustNot(_, _)) => {
+            format!("cannot rewrite '{}' since it already exists.", label)
+        }
         (Some(factoid), EditOptions::Must(editor, _))
         | (Some(factoid), EditOptions::Optional(editor, _)) => {
             if factoid.locked && !is_admin(nick, config) {
-                Response::Notice(format!(
-                    "cannot edit factoid: '{}' because it is locked.",
-                    label
-                ))
+                format!("cannot edit factoid: '{}' because it is locked.", label)
             } else {
                 let description = editor(&factoid);
                 db.create_factoid(nick, factoid.intent, &label, &description, false)?;
-                Response::Notice(format!("edited factoid: '{}'.", label))
+                format!("edited factoid: '{}'.", label)
             }
         }
     })

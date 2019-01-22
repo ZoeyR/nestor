@@ -12,7 +12,7 @@ use syn::Path;
 use quote::{quote, quote_spanned};
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
-use syn::{parse_macro_input, Expr, Ident, ItemFn, NestedMeta, Token};
+use syn::{parse_macro_input, Expr, ItemFn, NestedMeta};
 
 const COMMAND_PREFIX: &'static str = "irc_bot_command_handler_";
 const ROUTE_ID_PREFIX: &'static str = "irc_bot_route_id_";
@@ -48,16 +48,21 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
         .collect();
 
     let result = quote! {
+        #[allow(non_upper_case_globals)]
         pub const #route_id: Option<&'static str> = #route;
+        #[allow(non_camel_case_types)]
         pub struct #name;
 
         impl irc_bot::handler::CommandHandler for #name {
             fn handle<'a, 'r>(
                 &'a self,
                 request: &'a irc_bot::request::Request<'r>,
-            ) -> std::pin::Pin<Box<std::future::Future<Output = Result<irc_bot::handler::Response, failure::Error>> + 'a>> {
+            ) -> std::pin::Pin<Box<std::future::Future<Output = irc_bot::response::Outcome> + 'a>> {
                 use std::pin::Pin;
-                let fut = #fn_name(#args);
+                use irc_bot::response::IntoOutcome;
+                use irc_bot::FutureExt;
+
+                let fut = #fn_name(#args).map(|val| val.into_outcome());
                 Box::pin(fut)
             }
         }

@@ -3,7 +3,7 @@ use crate::database::Db;
 
 use failure::Error;
 use irc_bot::config::{is_admin, Config};
-use irc_bot::handler::{Command, Response};
+use irc_bot::handler::Command;
 use irc_bot::request::State;
 use irc_bot_codegen::command;
 
@@ -12,11 +12,9 @@ pub async fn forget<'a>(
     command: &'a Command<'a>,
     config: &'a Config,
     db: State<'a, Db>,
-) -> Result<Response, Error> {
+) -> Result<String, Error> {
     if command.arguments.is_empty() {
-        return Ok(Response::Notice(
-            "Invalid command format, please use ~forget <factoid>".into(),
-        ));
+        return Ok("Invalid command format, please use ~forget <factoid>".into());
     }
 
     let actual_factoid = command.arguments.join(" ");
@@ -32,11 +30,11 @@ pub async fn forget<'a>(
                 &factoid.description,
                 false,
             )?;
-            Response::Notice(format!("forgot factoid '{}'", factoid.label))
+            format!("forgot factoid '{}'", factoid.label)
         }
-        Some(_) | None => Response::Notice(format!(
+        Some(_) | None => format!(
             "cannot forget factoid '{}' because it doesn't exist",
             actual_factoid
-        )),
+        ),
     })
 }

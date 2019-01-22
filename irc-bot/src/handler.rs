@@ -4,6 +4,7 @@ use std::pin::Pin;
 
 use crate::config::Config;
 use crate::request::Request;
+use crate::response::{Outcome, Response};
 
 use failure::Error;
 
@@ -30,22 +31,23 @@ impl CommandRouter {
         }
     }
 
-    pub async fn route<'r>(&'r self, request: Request<'r>) -> Result<Response, Error> {
+    pub async fn route<'r>(&'r self, request: &'r Request<'r>) -> Outcome {
         if request
             .config
             .bot_settings
             .blacklisted_users
             .contains(&request.command.source_nick.into())
         {
-            return Ok(Response::None);
+            return Outcome::Success(Response::None);
         }
 
-        if let Some(handler) = self.commands.get(request.command.command_str) {
+        let c: &str = request.command.command_str.as_ref();
+        if let Some(handler) = self.commands.get(c) {
             await!(handler.handle(&request))
         } else if let Some(handler) = &self.default {
             await!(handler.handle(&request))
         } else {
-            Ok(Response::None)
+            Outcome::Success(Response::None)
         }
     }
 }
@@ -54,13 +56,13 @@ pub trait CommandHandler {
     fn handle<'a, 'r>(
         &'a self,
         request: &'a Request<'r>,
-    ) -> Pin<Box<Future<Output = Result<Response, Error>> + 'a>>;
+    ) -> Pin<Box<Future<Output = Outcome> + 'a>>;
 }
 
 pub struct Command<'a> {
     pub source_nick: &'a str,
-    pub command_str: &'a str,
-    pub arguments: Vec<&'a str>,
+    pub command_str: String,
+    pub arguments: Vec<String>,
 }
 
 impl<'a> Command<'a> {
@@ -89,7 +91,7 @@ impl<'a> Command<'a> {
             })
             .nth(0)?;
 
-        let mut parts = command_str.trim().split(' ');
+        let mut parts = command_str.trim().split(' ').map(String::from);
         let command = parts.next()?;
         let args = parts.collect();
         Some(Command {
@@ -98,12 +100,15 @@ impl<'a> Command<'a> {
             arguments: args,
         })
     }
-}
 
-#[derive(Debug)]
-pub enum Response {
-    Say(String),
-    Act(String),
-    Notice(String),
-    None,
+    pub fn from_command_str(source_nick: &'a str, command_str: &str) -> Option<Command<'a>> {
+        let mut parts = command_str.trim().split(' ').map(String::from);
+        let command = parts.next()?;
+        let args = parts.collect();
+        Some(Command {
+            source_nick,
+            command_str: command,
+            arguments: args,
+        })
+    }
 }

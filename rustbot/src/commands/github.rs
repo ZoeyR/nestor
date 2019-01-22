@@ -1,6 +1,6 @@
 use failure::Error;
 use irc_bot::config::Config;
-use irc_bot::handler::{Command, Response};
+use irc_bot::handler::Command;
 use irc_bot_codegen::command;
 use reqwest::header::{ACCEPT, USER_AGENT};
 use reqwest::r#async::Client;
@@ -19,14 +19,12 @@ struct PullRequest {
 }
 
 #[command("rfc")]
-pub async fn rfc<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<Response, Error> {
+pub async fn rfc<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<String, Error> {
     let rfc = match command.arguments.get(0).map(|arg| arg.parse::<u32>()) {
         Some(Ok(rfc)) => rfc,
-        Some(Err(_)) => return Ok(Response::Notice("RFC must be a number.".into())),
+        Some(Err(_)) => return Ok("RFC must be a number.".into()),
         None => {
-            return Ok(Response::Notice(
-                "Invalid command format, please use ~rfc <number>.".into(),
-            ));
+            return Ok("Invalid command format, please use ~rfc <number>.".into());
         }
     };
 
@@ -65,18 +63,18 @@ pub async fn rfc<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<Res
                 &pull_request.state
             };
 
-            Ok(Response::Notice(format!(
+            Ok(format!(
                 "[PR {}] <{}> {} <{}>",
                 pull_request.number, state, pull_request.title, pull_request.html_url
-            )))
+            ))
         }
-        StatusCode::NOT_FOUND => Ok(Response::Notice(format!(
+        StatusCode::NOT_FOUND => Ok(format!(
             "RFC {} does not exist",
             command.arguments[0]
-        ))),
-        code => Ok(Response::Notice(format!(
+        )),
+        code => Ok(format!(
             "github.com returned error code: {}",
             code.as_u16()
-        ))),
+        )),
     }
 }
