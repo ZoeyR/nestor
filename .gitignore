@@ -2,3 +2,4 @@
 **/*.rs.bk
 *.sqlite
 irc.config.toml
+rustbot/nestor.toml
