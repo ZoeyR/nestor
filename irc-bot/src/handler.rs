@@ -43,9 +43,15 @@ impl CommandRouter {
 
         let c: &str = request.command.command_str.as_ref();
         if let Some(handler) = self.commands.get(c) {
-            await!(handler.handle(&request))
+            match handler.handle(&request) {
+                Ok(fut) => await!(fut),
+                Err(err) => return Outcome::Failure(err),
+            }
         } else if let Some(handler) = &self.default {
-            await!(handler.handle(&request))
+            match handler.handle(&request) {
+                Ok(fut) => await!(fut),
+                Err(err) => return Outcome::Failure(err),
+            }
         } else {
             Outcome::Success(Response::None)
         }
@@ -56,7 +62,7 @@ pub trait CommandHandler {
     fn handle<'a, 'r>(
         &'a self,
         request: &'a Request<'r>,
-    ) -> Pin<Box<Future<Output = Outcome> + 'a>>;
+    ) -> Result<Pin<Box<Future<Output = Outcome> + 'a>>, Error>;
 }
 
 pub struct Command<'a> {

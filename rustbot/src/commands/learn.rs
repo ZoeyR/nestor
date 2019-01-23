@@ -7,14 +7,13 @@ use crate::database::Db;
 use failure::Error;
 use irc_bot::config::{is_admin, Config};
 use irc_bot::handler::Command;
-use irc_bot::request::State;
 use irc_bot_codegen::command;
 
 #[command("learn")]
 pub async fn learn<'a>(
     command: &'a Command<'a>,
     config: &'a Config,
-    db: State<'a, Db>,
+    db: &'a Db,
 ) -> Result<String, Error> {
     let operation_index = match command
         .arguments

@@ -3,14 +3,13 @@ use crate::database::Db;
 use failure::Error;
 use irc_bot::config::{is_admin, Config};
 use irc_bot::handler::Command;
-use irc_bot::request::State;
 use irc_bot_codegen::command;
 
 #[command("lock")]
 pub async fn lock<'a>(
     command: &'a Command<'a>,
     config: &'a Config,
-    db: State<'a, Db>,
+    db: &'a Db,
 ) -> Result<String, Error> {
     if !is_admin(command.source_nick, config) {
         return Ok("Only an admin can lock a factoid".into());
@@ -43,7 +42,7 @@ pub async fn lock<'a>(
 pub async fn unlock<'a>(
     command: &'a Command<'a>,
     config: &'a Config,
-    db: State<'a, Db>,
+    db: &'a Db,
 ) -> Result<String, Error> {
     if !is_admin(command.source_nick, config) {
         return Ok("Only an admin can unlock a factoid".into());

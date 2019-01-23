@@ -7,6 +7,7 @@ use chrono::offset::Utc;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use failure::Error;
+use irc_bot::request::{Request, FromRequest, State};
 
 pub mod import_models;
 pub mod models;
@@ -148,5 +149,16 @@ impl Db {
             .execute(&self.connection)?;
 
         Ok(())
+    }
+}
+
+impl<'a, 'r> FromRequest<'a, 'r> for &'a Db {
+    type Error = Error;
+    fn from_request(request: &'a Request<'r>) -> Result<Self, Self::Error> {
+        let db: State<'a, Result<Db, Error>> = FromRequest::from_request(request)?;
+        match db.inner() {
+            Err(_) => Err(failure::err_msg("Failed to create db connection")),
+            Ok(db) => Ok(&db)
+        }
     }
 }

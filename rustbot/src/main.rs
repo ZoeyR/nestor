@@ -14,6 +14,7 @@ use crate::database::models::WinErrorVariant;
 
 use irc_bot::Nestor;
 use irc_bot_codegen::routes;
+use irc_bot::config::Config;
 use structopt::StructOpt;
 
 mod commands;
@@ -22,8 +23,9 @@ mod database;
 
 fn main() {
     let args = Args::from_args();
-
-    let db = database::Db::open("rustybot.sqlite").unwrap();
+    
+    let config = Config::load(args.config).unwrap();
+    let db = database::Db::open(&config.bot_settings.database_url).unwrap();
 
     match args.command {
         Command::Export { file } => {
@@ -104,8 +106,9 @@ fn main() {
         }
 
         Command::Launch {} => {
-            Nestor::build()
-                .manage(|| database::Db::open("rustybot.sqlite").unwrap())
+            let connection_str = config.bot_settings.database_url.clone();
+            Nestor::with_config(config)
+                .manage(move || database::Db::open(&connection_str))
                 .route(routes![
                     commands::crate_info::crate_info,
                     commands::forget::forget,

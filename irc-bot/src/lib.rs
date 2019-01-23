@@ -1,6 +1,5 @@
 #![feature(await_macro, async_await, futures_api)]
 
-use std::borrow::Borrow;
 use std::rc::Rc;
 
 use crate::config::Config;
@@ -16,6 +15,7 @@ use state::Container;
 use tokio_async_await::compat::backward;
 
 pub use futures_preview::FutureExt;
+pub use failure::Error;
 
 pub mod config;
 pub mod handler;
@@ -31,6 +31,14 @@ pub struct Nestor {
 impl Nestor {
     pub fn build() -> Self {
         let config = Config::load("nestor.toml").unwrap();
+        Nestor {
+            state: Container::new(),
+            config,
+            router: CommandRouter::new(),
+        }
+    }
+
+    pub fn with_config(config: Config) -> Self {
         Nestor {
             state: Container::new(),
             config,

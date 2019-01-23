@@ -42,7 +42,7 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
         .inputs
         .iter()
         .map(|_| {
-            let x = quote! {irc_bot::request::FromRequest::from_request(request).unwrap()}.into();
+            let x = quote! {irc_bot::request::FromRequest::from_request(request)?}.into();
             syn::parse::<Expr>(x).unwrap()
         })
         .collect();
@@ -57,13 +57,13 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
             fn handle<'a, 'r>(
                 &'a self,
                 request: &'a irc_bot::request::Request<'r>,
-            ) -> std::pin::Pin<Box<std::future::Future<Output = irc_bot::response::Outcome> + 'a>> {
+            ) -> Result<std::pin::Pin<Box<std::future::Future<Output = irc_bot::response::Outcome> + 'a>>, irc_bot::Error> {
                 use std::pin::Pin;
                 use irc_bot::response::IntoOutcome;
                 use irc_bot::FutureExt;
 
                 let fut = #fn_name(#args).map(|val| val.into_outcome());
-                Box::pin(fut)
+                Ok(Box::pin(fut))
             }
         }
 

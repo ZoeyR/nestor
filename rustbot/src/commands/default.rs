@@ -2,14 +2,13 @@ use crate::database::models::FactoidEnum;
 use crate::database::Db;
 
 use irc_bot::handler::Command;
-use irc_bot::request::State;
 use irc_bot::response::{Response, Outcome};
 use irc_bot_codegen::command;
 
 #[command]
 pub async fn user_defined<'a>(
     command: &'a Command<'a>,
-    db: State<'a, Db>,
+    db: &'a Db,
 ) -> Outcome {
     let num_args = command.arguments.len();
 

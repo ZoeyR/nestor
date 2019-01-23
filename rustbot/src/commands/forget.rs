@@ -4,14 +4,13 @@ use crate::database::Db;
 use failure::Error;
 use irc_bot::config::{is_admin, Config};
 use irc_bot::handler::Command;
-use irc_bot::request::State;
 use irc_bot_codegen::command;
 
 #[command("forget")]
 pub async fn forget<'a>(
     command: &'a Command<'a>,
     config: &'a Config,
-    db: State<'a, Db>,
+    db: &'a Db,
 ) -> Result<String, Error> {
     if command.arguments.is_empty() {
         return Ok("Invalid command format, please use ~forget <factoid>".into());

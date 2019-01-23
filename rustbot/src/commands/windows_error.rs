@@ -3,21 +3,20 @@ use crate::database::Db;
 
 use failure::Error;
 use irc_bot::handler::Command;
-use irc_bot::request::State;
 use irc_bot_codegen::command;
 
 #[command("hresult")]
-pub async fn hresult<'a>(command: &'a Command<'a>, db: State<'a, Db>) -> Result<String, Error> {
+pub async fn hresult<'a>(command: &'a Command<'a>, db: &'a Db) -> Result<String, Error> {
     await!(generic_error(command, WinErrorVariant::HResult, &db))
 }
 
 #[command("ntstatus")]
-pub async fn nt_status<'a>(command: &'a Command<'a>, db: State<'a, Db>) -> Result<String, Error> {
+pub async fn nt_status<'a>(command: &'a Command<'a>, db: &'a Db) -> Result<String, Error> {
     await!(generic_error(command, WinErrorVariant::NtStatus, &db))
 }
 
 #[command("win32")]
-pub async fn win32<'a>(command: &'a Command<'a>, db: State<'a, Db>) -> Result<String, Error> {
+pub async fn win32<'a>(command: &'a Command<'a>, db: &'a Db) -> Result<String, Error> {
     await!(generic_error(command, WinErrorVariant::Win32, &db))
 }
 

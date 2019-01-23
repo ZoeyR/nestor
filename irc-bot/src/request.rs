@@ -7,6 +7,7 @@ use crate::Nestor;
 use irc::client::prelude::Message;
 use irc::client::IrcClient;
 use state::Container;
+use failure::Error;
 
 pub struct Request<'r> {
     pub(crate) config: &'r Config,
@@ -44,6 +45,12 @@ impl<'r> Request<'r> {
 
 pub struct State<'r, T: Send + 'static>(&'r T);
 
+impl<'r, T: Send + 'static> State<'r, T> {
+    pub fn inner(&self) -> &'r T {
+        self.0
+    }
+}
+
 impl<'r, T: Send + 'static> Deref for State<'r, T> {
     type Target = T;
     fn deref(&self) -> &T {
@@ -51,24 +58,29 @@ impl<'r, T: Send + 'static> Deref for State<'r, T> {
     }
 }
 
+
 pub trait FromRequest<'a, 'r>: Sized {
-    fn from_request(request: &'a Request<'r>) -> Option<Self>;
+    type Error;
+    fn from_request(request: &'a Request<'r>) -> Result<Self, Self::Error>;
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for &'a Config {
-    fn from_request(request: &'a Request<'r>) -> Option<Self> {
-        Some(&request.config)
+    type Error = Error;
+    fn from_request(request: &'a Request<'r>) -> Result<Self, Self::Error> {
+        Ok(&request.config)
     }
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for &'a Command<'r> {
-    fn from_request(request: &'a Request<'r>) -> Option<Self> {
-        Some(&request.command)
+    type Error = Error;
+    fn from_request(request: &'a Request<'r>) -> Result<Self, Self::Error> {
+        Ok(&request.command)
     }
 }
 
 impl<'a, 'r, T: Send + 'static> FromRequest<'a, 'r> for State<'r, T> {
-    fn from_request(request: &'a Request<'r>) -> Option<Self> {
-        request.state.try_get_local::<T>().map(State)
+    type Error = Error;
+    fn from_request(request: &'a Request<'r>) -> Result<Self, Error> {
+        request.state.try_get_local::<T>().map(State).ok_or(failure::err_msg("State object not managed."))
     }
 }
