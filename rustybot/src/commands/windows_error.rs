@@ -2,8 +2,8 @@ use crate::database::models::WinErrorVariant;
 use crate::database::Db;
 
 use failure::Error;
-use irc_bot::handler::Command;
-use irc_bot_codegen::command;
+use nestor::handler::Command;
+use nestor_codegen::command;
 
 #[command("hresult")]
 pub async fn hresult<'a>(command: &'a Command<'a>, db: &'a Db) -> Result<String, Error> {

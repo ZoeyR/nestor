@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "rustbot",
-    "irc-bot",
-    "irc-bot-codegen",
+    "rustybot",
+    "nestor",
+    "nestor-codegen",
 ]

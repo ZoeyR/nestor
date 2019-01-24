@@ -1,6 +1,6 @@
 [package]
-name = "irc-bot"
-version = "0.1.0"
+name = "nestor"
+version = "0.0.1"
 authors = ["Daniel Griffen <daniel@griffen.io>"]
 edition = "2018"
 

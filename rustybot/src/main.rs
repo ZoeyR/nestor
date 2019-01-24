@@ -12,9 +12,9 @@ use crate::config::{Args, Command, ImportType};
 use crate::database::import_models::{RFactoid, WinError};
 use crate::database::models::WinErrorVariant;
 
-use irc_bot::Nestor;
-use irc_bot_codegen::routes;
-use irc_bot::config::Config;
+use nestor::Nestor;
+use nestor_codegen::routes;
+use nestor::config::Config;
 use structopt::StructOpt;
 
 mod commands;

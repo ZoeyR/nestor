@@ -1,6 +1,6 @@
 [package]
-name = "rustbot"
-version = "0.1.0"
+name = "rustybot"
+version = "0.0.1"
 authors = ["Daniel Griffen <daniel@griffen.io>"]
 edition = "2018"
 
@@ -18,5 +18,5 @@ serde_json = "1.0"
 structopt = "0.2"
 reqwest = "0.9"
 rand = "0.6"
-irc-bot-codegen = { path = "../irc-bot-codegen" }
-irc-bot = { path = "../irc-bot" }
+nestor-codegen = { path = "../nestor-codegen" }
+nestor = { path = "../nestor" }
