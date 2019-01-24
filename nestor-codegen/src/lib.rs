@@ -14,8 +14,8 @@ use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::{parse_macro_input, Expr, ItemFn, NestedMeta};
 
-const COMMAND_PREFIX: &'static str = "irc_bot_command_handler_";
-const ROUTE_ID_PREFIX: &'static str = "irc_bot_route_id_";
+const COMMAND_PREFIX: &'static str = "nestor_command_handler_";
+const ROUTE_ID_PREFIX: &'static str = "nestor_route_id_";
 
 #[proc_macro_attribute]
 pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
@@ -42,7 +42,7 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
         .inputs
         .iter()
         .map(|_| {
-            let x = quote! {irc_bot::request::FromRequest::from_request(request)?}.into();
+            let x = quote! {nestor::request::FromRequest::from_request(request)?}.into();
             syn::parse::<Expr>(x).unwrap()
         })
         .collect();
@@ -53,14 +53,14 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
         #[allow(non_camel_case_types)]
         pub struct #name;
 
-        impl irc_bot::handler::CommandHandler for #name {
+        impl nestor::handler::CommandHandler for #name {
             fn handle<'a, 'r>(
                 &'a self,
-                request: &'a irc_bot::request::Request<'r>,
-            ) -> Result<std::pin::Pin<Box<std::future::Future<Output = irc_bot::response::Outcome> + 'a>>, irc_bot::Error> {
+                request: &'a nestor::request::Request<'r>,
+            ) -> Result<std::pin::Pin<Box<std::future::Future<Output = nestor::response::Outcome> + 'a>>, nestor::Error> {
                 use std::pin::Pin;
-                use irc_bot::response::IntoOutcome;
-                use irc_bot::FutureExt;
+                use nestor::response::IntoOutcome;
+                use nestor::FutureExt;
 
                 let fut = #fn_name(#args).map(|val| val.into_outcome());
                 Ok(Box::pin(fut))
@@ -109,7 +109,7 @@ fn prefixed_vec(input: TokenStream) -> TokenStream {
     let vec = _prefixed_vec(input);
 
     quote!({
-        let __vector: Vec<(Option<&'static str>, Box<dyn irc_bot::handler::CommandHandler>)> = #vec;
+        let __vector: Vec<(Option<&'static str>, Box<dyn nestor::handler::CommandHandler>)> = #vec;
         __vector
     })
     .into()

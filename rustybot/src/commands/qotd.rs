@@ -1,8 +1,8 @@
 use crate::database::Db;
 
 use failure::Error;
-use irc_bot::handler::Command;
-use irc_bot_codegen::command;
+use nestor::handler::Command;
+use nestor_codegen::command;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 

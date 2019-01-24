@@ -1,7 +1,7 @@
 use failure::Error;
-use irc_bot::config::Config;
-use irc_bot::handler::Command;
-use irc_bot_codegen::command;
+use nestor::config::Config;
+use nestor::handler::Command;
+use nestor_codegen::command;
 use reqwest::header::{ACCEPT, USER_AGENT};
 use reqwest::r#async::Client;
 use reqwest::StatusCode;

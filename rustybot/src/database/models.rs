@@ -13,7 +13,7 @@ use diesel::serialize::{self, Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
 use failure::{format_err, Error};
-use irc_bot::response::Response;
+use nestor::response::Response;
 
 #[derive(Queryable)]
 pub struct Factoid {

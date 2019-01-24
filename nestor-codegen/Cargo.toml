@@ -2,8 +2,8 @@
 proc-macro = true
 
 [package]
-name = "irc-bot-codegen"
-version = "0.1.0"
+name = "nestor-codegen"
+version = "0.0.1"
 authors = ["Daniel Griffen <daniel@griffen.io>"]
 edition = "2018"
 
