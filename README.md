@@ -1,22 +1,17 @@
-# rustybot
+# nestor
 
-![license][license-badge]
+![license][license-badge] [![Build Status](https://travis-ci.org/dgriffen/nestor.svg?branch=master)](https://travis-ci.org/dgriffen/nestor)
 
-Rustybot is a reimplementation of rustbot in Rust.
-
-## Current Status
-
-Currently the project only implements the factoid subsystem of rustbot. The rest of the subsystems will be added over time.
+nestor is an irc bot framework for Rust, inspired by the API of [rocket](https://rocket.rs).
 
 ## Development
 ### Prerequisites
-- rustc (either via rustup or your distributions package manager)
-- cargo (via the same method as above)
-- sqlite3
+- rustc and cargo nightly (2019-01-21 or newer)
+- openssl dev libraries on mac or linux
 
 ### Building
-- `git clone https://github.com/dgriffen/rustybot.git`
-- `cd rustybot`
+- `git clone https://github.com/dgriffen/nestor`
+- `cd nestor\nestor`
 - `cargo build`
 
 ## License
