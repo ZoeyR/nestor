@@ -7,7 +7,7 @@ use chrono::offset::Utc;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use failure::Error;
-use nestor::request::{Request, FromRequest, State};
+use nestor::request::{FromRequest, Request, State};
 
 pub mod import_models;
 pub mod models;
@@ -158,7 +158,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a Db {
         let db: State<'a, Result<Db, Error>> = FromRequest::from_request(request)?;
         match db.inner() {
             Err(_) => Err(failure::err_msg("Failed to create db connection")),
-            Ok(db) => Ok(&db)
+            Ok(db) => Ok(&db),
         }
     }
 }

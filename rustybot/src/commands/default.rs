@@ -2,14 +2,11 @@ use crate::database::models::FactoidEnum;
 use crate::database::Db;
 
 use nestor::handler::Command;
-use nestor::response::{Response, Outcome};
+use nestor::response::{Outcome, Response};
 use nestor_codegen::command;
 
 #[command]
-pub async fn user_defined<'a>(
-    command: &'a Command<'a>,
-    db: &'a Db,
-) -> Outcome {
+pub async fn user_defined<'a>(command: &'a Command<'a>, db: &'a Db) -> Outcome {
     let num_args = command.arguments.len();
 
     let full_command: Vec<_> = std::iter::once(&command.command_str)

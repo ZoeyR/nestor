@@ -68,13 +68,7 @@ pub async fn rfc<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<Str
                 pull_request.number, state, pull_request.title, pull_request.html_url
             ))
         }
-        StatusCode::NOT_FOUND => Ok(format!(
-            "RFC {} does not exist",
-            command.arguments[0]
-        )),
-        code => Ok(format!(
-            "github.com returned error code: {}",
-            code.as_u16()
-        )),
+        StatusCode::NOT_FOUND => Ok(format!("RFC {} does not exist", command.arguments[0])),
+        code => Ok(format!("github.com returned error code: {}", code.as_u16())),
     }
 }
