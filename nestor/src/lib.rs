@@ -14,8 +14,8 @@ use irc::proto::Message;
 use state::Container;
 use tokio_async_await::compat::backward;
 
-pub use futures_preview::FutureExt;
 pub use failure::Error;
+pub use futures_preview::FutureExt;
 
 pub mod config;
 pub mod handler;
@@ -107,7 +107,9 @@ async fn handle_message(nestor: Rc<Nestor>, client: IrcClient, message: Message)
             return Ok(());
         }
 
-        client.send_notice(responder, "alias depth too deep").unwrap();
+        client
+            .send_notice(responder, "alias depth too deep")
+            .unwrap();
     }
 
     Ok(())

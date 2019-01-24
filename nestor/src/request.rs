@@ -4,10 +4,10 @@ use crate::config::Config;
 use crate::handler::Command;
 use crate::Nestor;
 
+use failure::Error;
 use irc::client::prelude::Message;
 use irc::client::IrcClient;
 use state::Container;
-use failure::Error;
 
 pub struct Request<'r> {
     pub(crate) config: &'r Config,
@@ -58,7 +58,6 @@ impl<'r, T: Send + 'static> Deref for State<'r, T> {
     }
 }
 
-
 pub trait FromRequest<'a, 'r>: Sized {
     type Error;
     fn from_request(request: &'a Request<'r>) -> Result<Self, Self::Error>;
@@ -81,6 +80,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a Command<'r> {
 impl<'a, 'r, T: Send + 'static> FromRequest<'a, 'r> for State<'r, T> {
     type Error = Error;
     fn from_request(request: &'a Request<'r>) -> Result<Self, Error> {
-        request.state.try_get_local::<T>().map(State).ok_or(failure::err_msg("State object not managed."))
+        request
+            .state
+            .try_get_local::<T>()
+            .map(State)
+            .ok_or(failure::err_msg("State object not managed."))
     }
 }

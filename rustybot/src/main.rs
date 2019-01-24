@@ -12,9 +12,9 @@ use crate::config::{Args, Command, ImportType};
 use crate::database::import_models::{RFactoid, WinError};
 use crate::database::models::WinErrorVariant;
 
+use nestor::config::Config;
 use nestor::Nestor;
 use nestor_codegen::routes;
-use nestor::config::Config;
 use structopt::StructOpt;
 
 mod commands;
@@ -23,7 +23,7 @@ mod database;
 
 fn main() {
     let args = Args::from_args();
-    
+
     let config = Config::load(args.config).unwrap();
     let db = database::Db::open(&config.bot_settings.database_url).unwrap();
 
