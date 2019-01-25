@@ -1,9 +1,9 @@
 use crate::database::models::FactoidEnum;
 use crate::database::Db;
 
+use nestor::command;
 use nestor::handler::Command;
 use nestor::response::{Outcome, Response};
-use nestor_codegen::command;
 
 #[command]
 pub async fn user_defined<'a>(command: &'a Command<'a>, db: &'a Db) -> Outcome {

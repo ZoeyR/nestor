@@ -1,6 +1,6 @@
 use failure::Error;
+use nestor::command;
 use nestor::handler::Command;
-use nestor_codegen::command;
 
 #[command("error")]
 pub async fn rustc_error<'a>(command: &'a Command<'a>) -> Result<String, Error> {

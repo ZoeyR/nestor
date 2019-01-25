@@ -1,9 +1,9 @@
 use crate::database::Db;
 
 use failure::Error;
+use nestor::command;
 use nestor::config::{is_admin, Config};
 use nestor::handler::Command;
-use nestor_codegen::command;
 
 #[command("lock")]
 pub async fn lock<'a>(
