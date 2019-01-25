@@ -3,7 +3,7 @@ use nestor::command;
 use nestor::handler::Command;
 
 #[command("error")]
-pub async fn rustc_error<'a>(command: &'a Command<'a>) -> Result<String, Error> {
+pub fn rustc_error(command: &Command) -> Result<String, Error> {
     if command.arguments.len() != 1 {
         return Ok("Invalid command format, please use ~error <error code>".into());
     }

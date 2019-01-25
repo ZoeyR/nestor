@@ -7,7 +7,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 
 #[command("qotd")]
-pub async fn qotd<'a>(command: &'a Command<'a>, db: &'a Db) -> Result<String, Error> {
+pub fn qotd(command: &Command, db: &Db) -> Result<String, Error> {
     let mut rng = thread_rng();
 
     Ok(match command.arguments.len() {

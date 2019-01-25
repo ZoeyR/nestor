@@ -41,11 +41,29 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
         .decl
         .inputs
         .iter()
-        .map(|_| {
-            let x = quote! {nestor::request::FromRequest::from_request(request)?}.into();
+        .map(|input| {
+            let span = input.span();
+            let x =
+                quote_spanned!(span=> nestor::request::FromRequest::from_request(request)?).into();
             syn::parse::<Expr>(x).unwrap()
         })
         .collect();
+
+    let (span, ty) = match &item.decl.output {
+        syn::ReturnType::Default => (item.decl.output.span(), quote! {()}),
+        syn::ReturnType::Type(_, ty) => (ty.span(), quote! {#ty}),
+    };
+
+    let function_call = if let Some(_) = item.asyncness {
+        let transform = quote_spanned!(span=> <#ty as IntoOutcome>::into_outcome(val));
+        quote! {#fn_name(#args).map(|val| #transform)}
+    } else {
+        let transform = quote_spanned!(span=> <#ty as IntoOutcome>::into_outcome(val));
+        quote! {{
+            let res = #fn_name(#args);
+            async {res}.map(|val| #transform)
+        }}
+    };
 
     let result = quote! {
         #[allow(non_upper_case_globals)]
@@ -62,7 +80,7 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
                 use nestor::response::IntoOutcome;
                 use nestor::FutureExt;
 
-                let fut = #fn_name(#args).map(|val| val.into_outcome());
+                let fut = #function_call;
                 Ok(Box::pin(fut))
             }
         }

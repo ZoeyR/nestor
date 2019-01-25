@@ -7,11 +7,7 @@ use nestor::config::{is_admin, Config};
 use nestor::handler::Command;
 
 #[command("forget")]
-pub async fn forget<'a>(
-    command: &'a Command<'a>,
-    config: &'a Config,
-    db: &'a Db,
-) -> Result<String, Error> {
+pub fn forget(command: &Command, config: &Config, db: &Db) -> Result<String, Error> {
     if command.arguments.is_empty() {
         return Ok("Invalid command format, please use ~forget <factoid>".into());
     }

@@ -10,11 +10,7 @@ use nestor::config::{is_admin, Config};
 use nestor::handler::Command;
 
 #[command("learn")]
-pub async fn learn<'a>(
-    command: &'a Command<'a>,
-    config: &'a Config,
-    db: &'a Db,
-) -> Result<String, Error> {
+pub fn learn(command: &Command, config: &Config, db: &Db) -> Result<String, Error> {
     let operation_index = match command
         .arguments
         .iter()

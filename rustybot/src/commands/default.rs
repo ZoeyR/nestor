@@ -6,7 +6,7 @@ use nestor::handler::Command;
 use nestor::response::{Outcome, Response};
 
 #[command]
-pub async fn user_defined<'a>(command: &'a Command<'a>, db: &'a Db) -> Outcome {
+pub fn user_defined(command: &Command, db: &Db) -> Outcome {
     let num_args = command.arguments.len();
 
     let full_command: Vec<_> = std::iter::once(&command.command_str)

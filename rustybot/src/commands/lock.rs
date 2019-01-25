@@ -6,11 +6,7 @@ use nestor::config::{is_admin, Config};
 use nestor::handler::Command;
 
 #[command("lock")]
-pub async fn lock<'a>(
-    command: &'a Command<'a>,
-    config: &'a Config,
-    db: &'a Db,
-) -> Result<String, Error> {
+pub fn lock(command: &Command, config: &Config, db: &Db) -> Result<String, Error> {
     if !is_admin(command.source_nick, config) {
         return Ok("Only an admin can lock a factoid".into());
     }
@@ -39,11 +35,7 @@ pub async fn lock<'a>(
 }
 
 #[command("unlock")]
-pub async fn unlock<'a>(
-    command: &'a Command<'a>,
-    config: &'a Config,
-    db: &'a Db,
-) -> Result<String, Error> {
+pub fn unlock(command: &Command, config: &Config, db: &Db) -> Result<String, Error> {
     if !is_admin(command.source_nick, config) {
         return Ok("Only an admin can unlock a factoid".into());
     }

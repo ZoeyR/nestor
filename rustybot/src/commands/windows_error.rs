@@ -6,25 +6,21 @@ use nestor::command;
 use nestor::handler::Command;
 
 #[command("hresult")]
-pub async fn hresult<'a>(command: &'a Command<'a>, db: &'a Db) -> Result<String, Error> {
-    await!(generic_error(command, WinErrorVariant::HResult, &db))
+pub fn hresult(command: &Command, db: &Db) -> Result<String, Error> {
+    generic_error(command, WinErrorVariant::HResult, db)
 }
 
 #[command("ntstatus")]
-pub async fn nt_status<'a>(command: &'a Command<'a>, db: &'a Db) -> Result<String, Error> {
-    await!(generic_error(command, WinErrorVariant::NtStatus, &db))
+pub fn nt_status(command: &Command, db: &Db) -> Result<String, Error> {
+    generic_error(command, WinErrorVariant::NtStatus, db)
 }
 
 #[command("win32")]
-pub async fn win32<'a>(command: &'a Command<'a>, db: &'a Db) -> Result<String, Error> {
-    await!(generic_error(command, WinErrorVariant::Win32, &db))
+pub fn win32(command: &Command, db: &Db) -> Result<String, Error> {
+    generic_error(command, WinErrorVariant::Win32, db)
 }
 
-async fn generic_error<'a>(
-    command: &'a Command<'a>,
-    variant: WinErrorVariant,
-    db: &'a Db,
-) -> Result<String, Error> {
+fn generic_error(command: &Command, variant: WinErrorVariant, db: &Db) -> Result<String, Error> {
     if command.arguments.len() != 1 {
         return Ok(format!(
             "Invalid command format, please use ~{} <code>. <code> can either be hex, decimal, or the symbol name.",
