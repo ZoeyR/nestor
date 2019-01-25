@@ -1,9 +1,9 @@
 use std::ops::Deref;
 
 use failure::Error;
+use nestor::command;
 use nestor::config::Config;
 use nestor::handler::Command;
-use nestor_codegen::command;
 use reqwest::header::USER_AGENT;
 use reqwest::r#async::Client;
 use reqwest::StatusCode;

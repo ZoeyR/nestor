@@ -2,7 +2,7 @@
 proc-macro = true
 
 [package]
-name = "nestor-codegen"
+name = "nestor_codegen"
 version = "0.0.1"
 authors = ["Daniel Griffen <daniel@griffen.io>"]
 edition = "2018"

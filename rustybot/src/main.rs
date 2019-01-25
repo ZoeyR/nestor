@@ -13,8 +13,8 @@ use crate::database::import_models::{RFactoid, WinError};
 use crate::database::models::WinErrorVariant;
 
 use nestor::config::Config;
+use nestor::routes;
 use nestor::Nestor;
-use nestor_codegen::routes;
 use structopt::StructOpt;
 
 mod commands;

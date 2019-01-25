@@ -2,9 +2,9 @@ use crate::database::models::FactoidEnum;
 use crate::database::Db;
 
 use failure::Error;
+use nestor::command;
 use nestor::config::{is_admin, Config};
 use nestor::handler::Command;
-use nestor_codegen::command;
 
 #[command("forget")]
 pub async fn forget<'a>(

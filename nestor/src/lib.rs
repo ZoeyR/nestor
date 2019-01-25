@@ -17,6 +17,9 @@ use tokio_async_await::compat::backward;
 pub use failure::Error;
 pub use futures_preview::FutureExt;
 
+pub use nestor_codegen::command;
+pub use nestor_codegen::routes;
+
 pub mod config;
 pub mod handler;
 pub mod request;
