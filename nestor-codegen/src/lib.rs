@@ -12,7 +12,7 @@ use syn::Path;
 use quote::{quote, quote_spanned};
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
-use syn::{parse_macro_input, Expr, ItemFn, NestedMeta};
+use syn::{parse_macro_input, ItemFn, NestedMeta};
 
 const COMMAND_PREFIX: &'static str = "nestor_command_handler_";
 const ROUTE_ID_PREFIX: &'static str = "nestor_route_id_";
@@ -37,15 +37,13 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
         item.ident.span(),
     );
 
-    let args: Punctuated<_, Comma> = item
+    let args: Vec<_> = item
         .decl
         .inputs
         .iter()
         .map(|input| {
             let span = input.span();
-            let x =
-                quote_spanned!(span=> nestor::request::FromRequest::from_request(request)?).into();
-            syn::parse::<Expr>(x).unwrap()
+            quote_spanned!(span=> nestor::request::FromRequest::from_request(request)?)
         })
         .collect();
 
@@ -55,13 +53,17 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     let function_call = if let Some(_) = item.asyncness {
-        let transform = quote_spanned!(span=> <#ty as IntoOutcome>::into_outcome(val));
-        quote! {#fn_name(#args).map(|val| #transform)}
+        quote_spanned! {span=> {
+            let fut = #fn_name(#(#args),*);
+            async {
+                let val = r#await!(fut);
+                <#ty as IntoOutcome>::into_outcome(val)
+            }
+        }}
     } else {
-        let transform = quote_spanned!(span=> <#ty as IntoOutcome>::into_outcome(val));
-        quote! {{
-            let res = #fn_name(#args);
-            async {res}.map(|val| #transform)
+        quote_spanned! {span => {
+            let res = <#ty as IntoOutcome>::into_outcome(#fn_name(#(#args),*));
+            async {res}
         }}
     };
 
@@ -78,7 +80,6 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
             ) -> Result<std::pin::Pin<Box<std::future::Future<Output = nestor::response::Outcome> + 'a>>, nestor::Error> {
                 use std::pin::Pin;
                 use nestor::response::IntoOutcome;
-                use nestor::FutureExt;
 
                 let fut = #function_call;
                 Ok(Box::pin(fut))
@@ -99,11 +100,9 @@ fn prefix_last_segment(prefix: &'static str, path: &mut Path) {
     )
 }
 
-fn _prefixed_vec(input: TokenStream) -> TokenStream2 {
+fn _prefixed_vec(input: TokenStream) -> Result<TokenStream2, syn::Error> {
     // Parse a comma-separated list of paths.
-    let mut paths = <Punctuated<Path, Comma>>::parse_terminated
-        .parse(input)
-        .unwrap();
+    let mut paths = <Punctuated<Path, Comma>>::parse_terminated.parse(input)?;
     let mut route_ids = paths.clone();
 
     // Prefix the last segment in each path with `prefix`.
@@ -120,11 +119,14 @@ fn _prefixed_vec(input: TokenStream) -> TokenStream2 {
         .zip(route_ids)
         .map(|(path, route_id)| quote_spanned!(path.span().into() => (#route_id,Box::new(#path))));
 
-    quote!(vec![#(#prefixed_mapped_paths),*])
+    Ok(quote!(vec![#(#prefixed_mapped_paths),*]))
 }
 
 fn prefixed_vec(input: TokenStream) -> TokenStream {
-    let vec = _prefixed_vec(input);
+    let vec = match _prefixed_vec(input) {
+        Ok(vec) => vec,
+        Err(err) => return err.to_compile_error().into(),
+    };
 
     quote!({
         let __vector: Vec<(Option<&'static str>, Box<dyn nestor::handler::CommandHandler>)> = #vec;

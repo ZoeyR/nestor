@@ -7,6 +7,7 @@ use crate::handler::{Command, CommandHandler, CommandRouter};
 use crate::request::Request;
 use crate::response::{Outcome, Response};
 
+use futures::future::Future;
 use irc::client::ext::ClientExt;
 use irc::client::reactor::IrcReactor;
 use irc::client::IrcClient;
@@ -15,7 +16,6 @@ use state::Container;
 use tokio_async_await::compat::backward;
 
 pub use failure::Error;
-pub use futures_preview::FutureExt;
 
 pub use nestor_codegen::command;
 pub use nestor_codegen::routes;
@@ -75,7 +75,7 @@ impl Nestor {
         client.identify().unwrap();
         reactor.register_client_with_handler(client, move |client, message| {
             let future = handle_message(nestor.clone(), client.clone(), message);
-            handle.spawn(backward::Compat::new(future));
+            handle.spawn(backward::Compat::new(future).map_err(|_| ()));
             Ok(())
         });
 
@@ -83,7 +83,11 @@ impl Nestor {
     }
 }
 
-async fn handle_message(nestor: Rc<Nestor>, client: IrcClient, message: Message) -> Result<(), ()> {
+async fn handle_message(
+    nestor: Rc<Nestor>,
+    client: IrcClient,
+    message: Message,
+) -> Result<(), Error> {
     if let Some((responder, mut request)) = Request::from_message(&nestor, &client, &message) {
         for _ in 0..nestor.config.bot_settings.alias_depth {
             let response = await!(nestor.router.route(&request));
@@ -92,7 +96,8 @@ async fn handle_message(nestor: Rc<Nestor>, client: IrcClient, message: Message)
                     request = Request {
                         config: &nestor.config,
                         state: &nestor.state,
-                        command: Command::from_command_str("", &c).unwrap(),
+                        command: Command::from_command_str(request.command.source_nick, &c)
+                            .ok_or(failure::err_msg("Internal error with command alias"))?,
                     };
                     continue;
                 }
@@ -101,18 +106,16 @@ async fn handle_message(nestor: Rc<Nestor>, client: IrcClient, message: Message)
             };
 
             match response {
-                Response::Say(message) => client.send_privmsg(responder, &message).unwrap(),
-                Response::Act(message) => client.send_action(responder, &message).unwrap(),
-                Response::Notice(message) => client.send_notice(responder, &message).unwrap(),
+                Response::Say(message) => client.send_privmsg(responder, &message)?,
+                Response::Act(message) => client.send_action(responder, &message)?,
+                Response::Notice(message) => client.send_notice(responder, &message)?,
                 Response::None => {}
             }
 
             return Ok(());
         }
 
-        client
-            .send_notice(responder, "alias depth too deep")
-            .unwrap();
+        client.send_notice(responder, "alias depth too deep")?;
     }
 
     Ok(())

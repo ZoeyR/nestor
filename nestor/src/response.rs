@@ -74,14 +74,15 @@ impl IntoOutcome for Outcome {
     }
 }
 
-impl<T> IntoOutcome for Result<T, Error>
+impl<T, E> IntoOutcome for Result<T, E>
 where
     T: IntoResponse,
+    E: Into<Error>,
 {
     fn into_outcome(self) -> Outcome {
         match self {
             Ok(inner) => Outcome::Success(inner.into_response()),
-            Err(err) => Outcome::Failure(err),
+            Err(err) => Outcome::Failure(err.into()),
         }
     }
 }

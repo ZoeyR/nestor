@@ -26,7 +26,7 @@ impl<'r> Request<'r> {
             _ => return None,
         };
 
-        let user = message.source_nickname().unwrap();
+        let user = message.source_nickname()?;
 
         let command = Command::try_parse(client.current_nickname(), user, msg, &nestor.config)?;
 
