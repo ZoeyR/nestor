@@ -14,5 +14,5 @@ state = { version = "0.4", features = ["tls"] }
 tokio = { version = "0.1.13", features = ["async-await-preview"] }
 tokio-async-await = "0.1.4"
 futures-preview = { package = "futures-preview", version = "0.3.0-alpha.12" }
-nestor_codegen = { version = "0.0.1", path = "../nestor-codegen" }
+nestor_codegen = { version = "0.1.0", path = "../nestor-codegen" }
 inventory = "0.1"
