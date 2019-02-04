@@ -1,9 +1,12 @@
 use std::ops::Deref;
 
+use crate::config::RustybotSettings;
+
 use failure::Error;
 use nestor::command;
-use nestor::config::Config;
+use nestor::config::Config as NestorConfig;
 use nestor::handler::Command;
+use nestor::request::State;
 use reqwest::header::USER_AGENT;
 use reqwest::r#async::Client;
 use reqwest::StatusCode;
@@ -25,7 +28,11 @@ struct Crate {
 }
 
 #[command("crate")]
-pub async fn crate_info<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<String, Error> {
+pub async fn crate_info<'a>(
+    command: &'a Command<'a>,
+    nestor_config: &'a NestorConfig,
+    r_config: State<'a, RustybotSettings>,
+) -> Result<String, Error> {
     if command.arguments.len() != 1 {
         return Ok("Invalid command format, please use ~crate <crate>".into());
     }
@@ -40,13 +47,13 @@ pub async fn crate_info<'a>(command: &'a Command<'a>, config: &'a Config) -> Res
             USER_AGENT,
             format!(
                 "{} ({})",
-                config
+                nestor_config
                     .irc_config
                     .nickname
                     .as_ref()
                     .map(|s| s.deref())
                     .unwrap_or("rustybot"),
-                config.bot_settings.contact
+                r_config.contact
             ),
         )
         .send())?;

@@ -1,16 +1,21 @@
 use std::marker::PhantomData;
 use std::ops::Deref;
 
+use crate::config::{is_admin, RustybotSettings};
 use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
 
 use failure::Error;
 use nestor::command;
-use nestor::config::{is_admin, Config};
 use nestor::handler::Command;
+use nestor::request::State;
 
 #[command("learn")]
-pub fn learn(command: &Command, config: &Config, db: &Db) -> Result<String, Error> {
+pub fn learn(
+    command: &Command,
+    config: State<RustybotSettings>,
+    db: State<Db>,
+) -> Result<String, Error> {
     let operation_index = match command
         .arguments
         .iter()
@@ -49,7 +54,7 @@ pub fn learn(command: &Command, config: &Config, db: &Db) -> Result<String, Erro
         "=" => learn_helper(
             command.source_nick,
             &actual_factoid,
-            config,
+            &config,
             existing_factoid,
             &db,
             FactoidEnum::Say,
@@ -61,7 +66,7 @@ pub fn learn(command: &Command, config: &Config, db: &Db) -> Result<String, Erro
         ":=" => learn_helper(
             command.source_nick,
             &actual_factoid,
-            config,
+            &config,
             existing_factoid,
             &db,
             FactoidEnum::Say,
@@ -73,7 +78,7 @@ pub fn learn(command: &Command, config: &Config, db: &Db) -> Result<String, Erro
         "+=" => learn_helper(
             command.source_nick,
             &actual_factoid,
-            config,
+            &config,
             existing_factoid,
             &db,
             FactoidEnum::Say,
@@ -85,7 +90,7 @@ pub fn learn(command: &Command, config: &Config, db: &Db) -> Result<String, Erro
         "f=" => learn_helper(
             command.source_nick,
             &actual_factoid,
-            config,
+            &config,
             existing_factoid,
             &db,
             FactoidEnum::Say,
@@ -97,7 +102,7 @@ pub fn learn(command: &Command, config: &Config, db: &Db) -> Result<String, Erro
         "!=" => learn_helper(
             command.source_nick,
             &actual_factoid,
-            config,
+            &config,
             existing_factoid,
             &db,
             FactoidEnum::Act,
@@ -109,7 +114,7 @@ pub fn learn(command: &Command, config: &Config, db: &Db) -> Result<String, Erro
         "@=" => learn_helper(
             command.source_nick,
             &actual_factoid,
-            config,
+            &config,
             existing_factoid,
             &db,
             FactoidEnum::Alias,
@@ -132,7 +137,7 @@ enum EditOptions<E, F> {
 fn learn_helper<E, F, T, G>(
     nick: &str,
     label: &str,
-    config: &Config,
+    config: &RustybotSettings,
     mut factoid: Option<Factoid>,
     db: &Db,
     intent: FactoidEnum,

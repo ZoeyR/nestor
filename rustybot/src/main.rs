@@ -1,5 +1,5 @@
 #![allow(proc_macro_derive_resolution_fallback)]
-#![feature(await_macro, async_await, futures_api, proc_macro_hygiene)]
+#![feature(await_macro, async_await, futures_api)]
 
 #[macro_use]
 extern crate diesel;
@@ -8,12 +8,10 @@ use std::fs::File;
 use std::io::Read;
 use std::io::{BufRead, BufReader, Write};
 
-use crate::config::{Args, Command, ImportType};
+use crate::config::{Args, Command, Config, ImportType};
 use crate::database::import_models::{RFactoid, WinError};
 use crate::database::models::WinErrorVariant;
 
-use nestor::config::Config;
-use nestor::routes;
 use nestor::Nestor;
 use structopt::StructOpt;
 
@@ -24,8 +22,11 @@ mod database;
 fn main() {
     let args = Args::from_args();
 
-    let config = Config::load(args.config).unwrap();
-    let db = database::Db::open(&config.bot_settings.database_url).unwrap();
+    let Config {
+        nestor: nestor_config,
+        rustybot: config,
+    } = Config::load(args.config).unwrap();
+    let db = database::Db::open(&config.database_url).unwrap();
 
     match args.command {
         Command::Export { file } => {
@@ -106,23 +107,9 @@ fn main() {
         }
 
         Command::Launch {} => {
-            let connection_str = config.bot_settings.database_url.clone();
-            Nestor::with_config(config)
-                .manage(move || database::Db::open(&connection_str))
-                .route(routes![
-                    commands::crate_info::crate_info,
-                    commands::forget::forget,
-                    commands::github::rfc,
-                    commands::learn::learn,
-                    commands::lock::lock,
-                    commands::lock::unlock,
-                    commands::qotd::qotd,
-                    commands::rustc_error::rustc_error,
-                    commands::windows_error::hresult,
-                    commands::windows_error::nt_status,
-                    commands::windows_error::win32,
-                    commands::default::user_defined,
-                ])
+            Nestor::with_config(nestor_config)
+                .manage(db)
+                .manage(config)
                 .activate();
         }
     }

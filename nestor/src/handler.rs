@@ -9,8 +9,8 @@ use crate::response::{Outcome, Response};
 use failure::Error;
 
 pub(crate) struct CommandRouter {
-    commands: HashMap<&'static str, Box<dyn CommandHandler>>,
-    default: Option<Box<dyn CommandHandler>>,
+    commands: HashMap<&'static str, &'static dyn CommandHandler>,
+    default: Option<&'static dyn CommandHandler>,
 }
 
 impl CommandRouter {
@@ -21,7 +21,10 @@ impl CommandRouter {
         }
     }
 
-    pub fn add_handlers(&mut self, handlers: Vec<(Option<&'static str>, Box<dyn CommandHandler>)>) {
+    pub fn add_handlers(
+        &mut self,
+        handlers: Vec<(Option<&'static str>, &'static dyn CommandHandler)>,
+    ) {
         for (label, handler) in handlers {
             if let Some(label) = label {
                 self.commands.insert(label, handler);
@@ -59,6 +62,8 @@ impl CommandRouter {
 }
 
 pub trait CommandHandler {
+    fn route_id(&self) -> Option<&'static str>;
+
     fn handle<'a, 'r>(
         &'a self,
         request: &'a Request<'r>,

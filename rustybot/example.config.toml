@@ -20,12 +20,12 @@ burst_window_length = 8
 max_messages_in_burst = 15
 should_ghost = false
 ghost_sequence = []
-
-[bot]
-admins = ["user"]
 blacklisted_users = ["bad_user"]
-database_url = "rustybot.sqlite"
 command_indicator = ["!"]
 alias_depth = 3
+
+[rustybot]
+admins = ["user"]
+database_url = "rustybot.sqlite"
 contact = "abuse@example.com"
 github_auth = { username = "user", password = "password" }

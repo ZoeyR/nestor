@@ -3,10 +3,11 @@ use crate::database::Db;
 
 use nestor::command;
 use nestor::handler::Command;
+use nestor::request::State;
 use nestor::response::{Outcome, Response};
 
 #[command]
-pub fn user_defined(command: &Command, db: &Db) -> Outcome {
+pub fn user_defined(command: &Command, db: State<Db>) -> Outcome {
     let num_args = command.arguments.len();
 
     let full_command: Vec<_> = std::iter::once(&command.command_str)
@@ -29,7 +30,13 @@ pub fn user_defined(command: &Command, db: &Db) -> Outcome {
             FactoidEnum::Forget => {
                 Response::Notice(format!("unknown factoid '{}'", command.command_str))
             }
-            FactoidEnum::Alias => return Outcome::Forward(factoid.description),
+            FactoidEnum::Alias => {
+                if let Some(name) = name {
+                    return Outcome::Forward(format!("{} @ {}", factoid.description, name));
+                } else {
+                    return Outcome::Forward(factoid.description);
+                }
+            }
             _ => factoid.intent.to_response(factoid.description),
         },
         Ok(None) if num_args == 0 => {

@@ -5,32 +5,34 @@ use self::models::{
 
 use chrono::offset::Utc;
 use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::sqlite::SqliteConnection;
 use failure::Error;
-use nestor::request::{FromRequest, Request, State};
 
 pub mod import_models;
 pub mod models;
 pub mod schema;
 
 pub struct Db {
-    connection: SqliteConnection,
+    pool: Pool<ConnectionManager<SqliteConnection>>,
 }
 
 impl Db {
     pub fn open(path: &str) -> Result<Self, Error> {
-        let connection = SqliteConnection::establish(path)?;
+        let manager = ConnectionManager::<SqliteConnection>::new(path);
+        let pool = Pool::builder().build(manager)?;
 
-        Ok(Db { connection })
+        Ok(Db { pool })
     }
 
     pub fn get_factoid(&self, key: &str) -> Result<Option<Factoid>, Error> {
         use self::schema::factoids::dsl::*;
 
+        let connection = self.pool.get()?;
         factoids
             .filter(label.eq(key))
             .order(timestamp.desc())
-            .first::<Factoid>(&self.connection)
+            .first::<Factoid>(&connection)
             .optional()
             .map_err(From::from)
     }
@@ -38,17 +40,19 @@ impl Db {
     pub fn all_factoids(&self) -> Result<Vec<Factoid>, Error> {
         use self::schema::factoids;
 
-        Ok(factoids::table.load(&self.connection)?)
+        let connection = self.pool.get()?;
+        Ok(factoids::table.load(&connection)?)
     }
 
     pub fn create_from_rfactoid(&self, rfactoid: &RFactoid) -> Result<(), Error> {
         use self::schema::factoids;
 
+        let connection = self.pool.get()?;
         let new_factoid = NewFactoid::from_rfactoid(rfactoid)?;
 
         diesel::insert_into(factoids::table)
             .values(&new_factoid)
-            .execute(&self.connection)?;
+            .execute(&connection)?;
 
         Ok(())
     }
@@ -63,6 +67,7 @@ impl Db {
     ) -> Result<(), Error> {
         use self::schema::factoids;
 
+        let connection = self.pool.get()?;
         let timestamp = Utc::now().naive_utc();
         let new_factoid = NewFactoid {
             label: factoid,
@@ -75,7 +80,7 @@ impl Db {
 
         diesel::insert_into(factoids::table)
             .values(&new_factoid)
-            .execute(&self.connection)?;
+            .execute(&connection)?;
 
         Ok(())
     }
@@ -83,17 +88,19 @@ impl Db {
     pub fn all_quotes(&self) -> Result<Vec<Quote>, Error> {
         use self::schema::qotd;
 
-        Ok(qotd::table.load(&self.connection)?)
+        let connection = self.pool.get()?;
+        Ok(qotd::table.load(&connection)?)
     }
 
     pub fn create_quote(&self, quote: &str) -> Result<(), Error> {
         use self::schema::qotd;
 
+        let connection = self.pool.get()?;
         let new_quote = NewQuote { quote };
 
         diesel::insert_into(qotd::table)
             .values(&new_quote)
-            .execute(&self.connection)?;
+            .execute(&connection)?;
 
         Ok(())
     }
@@ -105,10 +112,11 @@ impl Db {
     ) -> Result<Option<WinError>, Error> {
         use self::schema::winerrors::dsl::*;
 
+        let connection = self.pool.get()?;
         winerrors
             .filter(error_type.eq(variant))
             .filter(code.eq(error_code.to_string()))
-            .first::<WinError>(&self.connection)
+            .first::<WinError>(&connection)
             .optional()
             .map_err(From::from)
     }
@@ -120,10 +128,11 @@ impl Db {
     ) -> Result<Option<WinError>, Error> {
         use self::schema::winerrors::dsl::*;
 
+        let connection = self.pool.get()?;
         winerrors
             .filter(error_type.eq(variant))
             .filter(name.eq(error_name))
-            .first::<WinError>(&self.connection)
+            .first::<WinError>(&connection)
             .optional()
             .map_err(From::from)
     }
@@ -137,6 +146,7 @@ impl Db {
     ) -> Result<(), Error> {
         use self::schema::winerrors;
 
+        let connection = self.pool.get()?;
         let new_error = NewWinError {
             code: &error_code.to_string(),
             error_type,
@@ -146,19 +156,8 @@ impl Db {
 
         diesel::insert_into(winerrors::table)
             .values(&new_error)
-            .execute(&self.connection)?;
+            .execute(&connection)?;
 
         Ok(())
-    }
-}
-
-impl<'a, 'r> FromRequest<'a, 'r> for &'a Db {
-    type Error = Error;
-    fn from_request(request: &'a Request<'r>) -> Result<Self, Self::Error> {
-        let db: State<'a, Result<Db, Error>> = FromRequest::from_request(request)?;
-        match db.inner() {
-            Err(_) => Err(failure::err_msg("Failed to create db connection")),
-            Ok(db) => Ok(&db),
-        }
     }
 }

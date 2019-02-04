@@ -17,13 +17,17 @@ use tokio_async_await::compat::backward;
 
 pub use failure::Error;
 
+#[doc(hidden)]
+pub use inventory;
+
 pub use nestor_codegen::command;
-pub use nestor_codegen::routes;
 
 pub mod config;
 pub mod handler;
 pub mod request;
 pub mod response;
+
+inventory::collect!(Box<dyn CommandHandler>);
 
 pub struct Nestor {
     state: Container,
@@ -49,23 +53,19 @@ impl Nestor {
         }
     }
 
-    pub fn manage<T: Send + 'static, F>(self, state: F) -> Self
-    where
-        T: Send + 'static,
-        F: Fn() -> T + 'static,
-    {
-        self.state.set_local(state);
+    pub fn manage<T: Send + Sync + 'static>(self, state: T) -> Self {
+        self.state.set(state);
 
         self
     }
 
-    pub fn route(mut self, handlers: Vec<(Option<&'static str>, Box<dyn CommandHandler>)>) -> Self {
-        self.router.add_handlers(handlers);
+    pub fn activate(mut self) {
+        let routes = inventory::iter::<Box<dyn CommandHandler>>
+            .into_iter()
+            .map(|route| (route.route_id(), route.as_ref()))
+            .collect();
+        self.router.add_handlers(routes);
 
-        self
-    }
-
-    pub fn activate(self) {
         let nestor = Rc::new(self);
         let mut reactor = IrcReactor::new().unwrap();
         let handle = reactor.inner_handle();
@@ -102,7 +102,10 @@ async fn handle_message(
                     continue;
                 }
                 Outcome::Success(response) => response,
-                Outcome::Failure(_) => Response::Say("Unexpected error executing command".into()),
+                Outcome::Failure(err) => {
+                    println!("{:?}", err);
+                    Response::Say("Unexpected error executing command".into())
+                }
             };
 
             match response {

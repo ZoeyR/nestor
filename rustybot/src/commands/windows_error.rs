@@ -4,20 +4,21 @@ use crate::database::Db;
 use failure::Error;
 use nestor::command;
 use nestor::handler::Command;
+use nestor::request::State;
 
 #[command("hresult")]
-pub fn hresult(command: &Command, db: &Db) -> Result<String, Error> {
-    generic_error(command, WinErrorVariant::HResult, db)
+pub fn hresult(command: &Command, db: State<Db>) -> Result<String, Error> {
+    generic_error(command, WinErrorVariant::HResult, &db)
 }
 
 #[command("ntstatus")]
-pub fn nt_status(command: &Command, db: &Db) -> Result<String, Error> {
-    generic_error(command, WinErrorVariant::NtStatus, db)
+pub fn nt_status(command: &Command, db: State<Db>) -> Result<String, Error> {
+    generic_error(command, WinErrorVariant::NtStatus, &db)
 }
 
 #[command("win32")]
-pub fn win32(command: &Command, db: &Db) -> Result<String, Error> {
-    generic_error(command, WinErrorVariant::Win32, db)
+pub fn win32(command: &Command, db: State<Db>) -> Result<String, Error> {
+    generic_error(command, WinErrorVariant::Win32, &db)
 }
 
 fn generic_error(command: &Command, variant: WinErrorVariant, db: &Db) -> Result<String, Error> {

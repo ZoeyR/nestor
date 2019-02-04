@@ -7,27 +7,17 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct Config {
-    #[serde(rename = "connection")]
+    #[serde(flatten)]
     pub irc_config: IrcConfig,
-    #[serde(rename = "bot")]
-    pub bot_settings: BotSettings,
+    #[serde(flatten)]
+    pub bot_settings: NestorSettings,
 }
 
 #[derive(Deserialize)]
-pub struct BotSettings {
-    pub admins: Vec<String>,
+pub struct NestorSettings {
     pub blacklisted_users: Vec<String>,
-    pub database_url: String,
     pub command_indicator: Vec<String>,
-    pub contact: String,
     pub alias_depth: u32,
-    pub github_auth: GithubAuth,
-}
-
-#[derive(Deserialize)]
-pub struct GithubAuth {
-    pub username: String,
-    pub password: String,
 }
 
 impl Config {
@@ -37,8 +27,4 @@ impl Config {
         let conf: Config = toml::de::from_str(&conf)?;
         Ok(conf)
     }
-}
-
-pub fn is_admin(nick: &str, config: &Config) -> bool {
-    config.bot_settings.admins.contains(&nick.into())
 }

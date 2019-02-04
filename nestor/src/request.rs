@@ -43,15 +43,15 @@ impl<'r> Request<'r> {
     }
 }
 
-pub struct State<'r, T: Send + 'static>(&'r T);
+pub struct State<'r, T: Send + Sync + 'static>(&'r T);
 
-impl<'r, T: Send + 'static> State<'r, T> {
+impl<'r, T: Send + Sync + 'static> State<'r, T> {
     pub fn inner(&self) -> &'r T {
         self.0
     }
 }
 
-impl<'r, T: Send + 'static> Deref for State<'r, T> {
+impl<'r, T: Send + Sync + 'static> Deref for State<'r, T> {
     type Target = T;
     fn deref(&self) -> &T {
         &self.0
@@ -77,12 +77,12 @@ impl<'a, 'r> FromRequest<'a, 'r> for &'a Command<'r> {
     }
 }
 
-impl<'a, 'r, T: Send + 'static> FromRequest<'a, 'r> for State<'r, T> {
+impl<'a, 'r, T: Send + Sync + 'static> FromRequest<'a, 'r> for State<'r, T> {
     type Error = Error;
     fn from_request(request: &'a Request<'r>) -> Result<Self, Error> {
         request
             .state
-            .try_get_local::<T>()
+            .try_get::<T>()
             .map(State)
             .ok_or(failure::err_msg("State object not managed."))
     }

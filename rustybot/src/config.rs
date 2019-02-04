@@ -1,5 +1,9 @@
+use std::fs;
+use std::path::Path;
 use std::path::PathBuf;
 
+use nestor::Error;
+use serde::Deserialize;
 use structopt::StructOpt;
 
 #[derive(StructOpt)]
@@ -8,7 +12,7 @@ pub struct Args {
         short = "c",
         long = "config",
         parse(from_os_str),
-        default_value = "irc.config.toml"
+        default_value = "nestor.toml"
     )]
     pub config: PathBuf,
     #[structopt(subcommand)] // Note that we mark a field as a subcommand
@@ -43,4 +47,38 @@ pub enum ImportType {
     NtResult,
     #[structopt(name = "win32")]
     Win32,
+}
+
+#[derive(Deserialize)]
+pub struct Config {
+    #[serde(rename = "connection")]
+    pub nestor: nestor::config::Config,
+    pub rustybot: RustybotSettings,
+}
+
+#[derive(Deserialize)]
+pub struct RustybotSettings {
+    pub admins: Vec<String>,
+    pub database_url: String,
+    pub contact: String,
+    pub github_auth: GithubAuth,
+}
+
+#[derive(Deserialize)]
+pub struct GithubAuth {
+    pub username: String,
+    pub password: String,
+}
+
+impl Config {
+    pub fn load(path: impl AsRef<Path>) -> Result<Self, Error> {
+        // Load entries via serde
+        let conf = fs::read_to_string(path.as_ref())?;
+        let conf: Config = toml::de::from_str(&conf)?;
+        Ok(conf)
+    }
+}
+
+pub fn is_admin(nick: &str, config: &RustybotSettings) -> bool {
+    config.admins.contains(&nick.into())
 }

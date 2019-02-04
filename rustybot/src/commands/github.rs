@@ -1,7 +1,10 @@
+use crate::config::RustybotSettings;
+
 use failure::Error;
 use nestor::command;
 use nestor::config::Config;
 use nestor::handler::Command;
+use nestor::request::State;
 use reqwest::header::{ACCEPT, USER_AGENT};
 use reqwest::r#async::Client;
 use reqwest::StatusCode;
@@ -19,7 +22,11 @@ struct PullRequest {
 }
 
 #[command("rfc")]
-pub async fn rfc<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<String, Error> {
+pub async fn rfc<'a>(
+    command: &'a Command<'a>,
+    config: &'a Config,
+    r_config: State<'a, RustybotSettings>,
+) -> Result<String, Error> {
     let rfc = match command.arguments.get(0).map(|arg| arg.parse::<u32>()) {
         Some(Ok(rfc)) => rfc,
         Some(Err(_)) => return Ok("RFC must be a number.".into()),
@@ -35,8 +42,8 @@ pub async fn rfc<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<Str
             rfc
         ))
         .basic_auth(
-            &config.bot_settings.github_auth.username,
-            Some(&config.bot_settings.github_auth.password)
+            &r_config.github_auth.username,
+            Some(&r_config.github_auth.password)
         )
         .header(ACCEPT, "application/vnd.github.v3+json")
         .header(
@@ -49,7 +56,7 @@ pub async fn rfc<'a>(command: &'a Command<'a>, config: &'a Config) -> Result<Str
                     .as_ref()
                     .map(|s| s.deref())
                     .unwrap_or("rustybot"),
-                config.bot_settings.contact
+                r_config.contact
             )
         )
         .send())?;
