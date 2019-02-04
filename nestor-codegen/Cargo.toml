@@ -5,6 +5,10 @@ proc-macro = true
 name = "nestor_codegen"
 version = "0.1.0"
 authors = ["Daniel Griffen <daniel@griffen.io>"]
+description = """
+procedural macros for nestor irc bot framework
+"""
+license = "MIT/Apache-2.0"
 edition = "2018"
 
 [dependencies]

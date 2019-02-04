@@ -2,6 +2,10 @@
 name = "nestor"
 version = "0.1.0"
 authors = ["Daniel Griffen <daniel@griffen.io>"]
+description = """
+irc bot framework for nightly
+"""
+license = "MIT/Apache-2.0"
 edition = "2018"
 
 [dependencies]
