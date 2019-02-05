@@ -1,6 +1,6 @@
 use failure::Error;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Response {
     Say(String),
     Act(String),

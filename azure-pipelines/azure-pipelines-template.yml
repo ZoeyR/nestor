@@ -1,0 +1,57 @@
+jobs:
+- job: ${{ parameters.name }}
+  pool:
+    vmImage: ${{ parameters.vmImage }}
+  strategy:
+    matrix:
+      nightly:
+        rustup_toolchain: nightly
+  steps:
+  - ${{ if ne(parameters.name, 'Windows') }}:
+    # Linux and macOS.
+    - script: |
+        curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain $RUSTUP_TOOLCHAIN
+        echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
+      displayName: Install rust
+  - ${{ if eq(parameters.name, 'Windows') }}:
+    # Windows.
+    - script: |
+        curl -sSf -o rustup-init.exe https://win.rustup.rs
+        rustup-init.exe -y --default-toolchain %RUSTUP_TOOLCHAIN%
+        set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+        echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
+      displayName: Install rust (windows)
+  # All platforms.
+  - script: |
+        rustc -Vv
+        cargo -V
+    displayName: Query rust and cargo versions
+  - ${{ if eq(parameters.name, 'Linux') }}:
+    - script: |
+        apt-get update && apt-get install libssl-dev pkg-config cmake zlib1g-dev
+        RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
+      displayName: Install tarpaulin
+  - script: cargo install --git https://github.com/dgriffen/cargo-junit
+    displayName: Install cargo junit formatter
+  - script: cargo build
+    displayName: Build
+  - script: cargo junit --name testResults.xml
+    env: { RUST_BACKTRACE: 1 }
+    displayName: Build and run tests
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/testResults.xml' 
+  - ${{ if eq(parameters.name, 'Linux') }}:
+    - script: |
+        cargo tarpaulin --out Xml
+        python azure-pipelines/fix_coverage_for_cobertura.py cobertura.xml
+      displayName: Run code coverage
+    - script: bash <(curl -s https://codecov.io/bash)
+      env:
+        CODECOV_TOKEN: $(CODECOV_TOKEN_SECRET)
+      displayName: Publish to codecov.io
+    - task: PublishCodeCoverageResults@1
+      inputs:
+        codeCoverageTool: 'cobertura'
+        summaryFileLocation: $(System.DefaultWorkingDirectory)/**/cobertura.xml
