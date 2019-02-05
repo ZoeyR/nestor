@@ -45,6 +45,7 @@ jobs:
   - ${{ if eq(parameters.name, 'Linux') }}:
     - script: |
         cargo tarpaulin --out Xml
+        bash <(curl -s https://codecov.io/bash)
       displayName: Run code coverage
     - task: PublishCodeCoverageResults@1
       inputs:
