@@ -34,6 +34,7 @@ jobs:
   - script: cargo install cargo-junit
     displayName: Install cargo junit formatter
   - script: cargo junit --name testResults.xml
+    env: { RUST_BACKTRACE: 1 }
     displayName: Build and run tests
   - task: PublishTestResults@2
     inputs:
