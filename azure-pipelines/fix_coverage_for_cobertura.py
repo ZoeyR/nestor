@@ -39,7 +39,7 @@ def fix_package(package_node):
 
 def fix(*args, **kargs):
     default_file_path = '.'
-    default_file_name = 'coverage.xml'
+    default_file_name = 'cobertura.xml'
     if len(args[0]) > 1:
         arg = args[0][1]
     else:
