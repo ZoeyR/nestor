@@ -19,6 +19,4 @@ structopt = "0.2"
 reqwest = "0.9"
 rand = "0.6"
 nestor = { version = "0.1.0", path = "../nestor" }
-
-[target.'cfg(target_env = "msvc")'.dependencies]
 libsqlite3-sys = { version = "0.9", features = ["bundled"] }
