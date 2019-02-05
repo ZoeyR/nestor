@@ -46,8 +46,11 @@ jobs:
     - script: |
         cargo tarpaulin --out Xml
         python azure-pipelines/fix_coverage_for_cobertura.py cobertura.xml
-        bash <(curl -s https://codecov.io/bash)
       displayName: Run code coverage
+    - script: bash <(curl -s https://codecov.io/bash)
+      env:
+        CODECOV_TOKEN: $(CODECOV_TOKEN_SECRET)
+      displayName: Publish to codecov.io
     - task: PublishCodeCoverageResults@1
       inputs:
         codeCoverageTool: 'cobertura'

@@ -48,7 +48,7 @@ def fix(*args, **kargs):
     if os.path.isdir(arg):
         file_name = os.path.join(arg, default_file_name)
     else:
-        file_name = os.path.join(default_file_path, default_file_name)
+        file_name = os.path.join(default_file_path, arg)
         
     print 'processing: '+file_name
     xml_file = open(file_name, 'r')
