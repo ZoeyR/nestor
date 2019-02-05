@@ -123,3 +123,61 @@ impl<'a> Command<'a> {
         })
     }
 }
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn command_routes() {
+        use super::{Command, Request};
+        use crate as nestor;
+        use crate::command;
+        use crate::handler::{CommandHandler, CommandRouter};
+        use crate::inventory;
+        use crate::Outcome;
+        use crate::Response;
+        use futures_preview::FutureExt;
+        use state::Container;
+        use tokio::prelude::Future;
+        use tokio_async_await::compat::backward;
+
+        let config = toml::de::from_str(
+            r##"
+        blacklisted_users = [""]
+        command_indicator = ["!"]
+        alias_depth = 3
+        "##,
+        )
+        .unwrap();
+
+        #[command("foo")]
+        fn foo() -> &'static str {
+            "foo"
+        }
+
+        let mut router = CommandRouter::new();
+        let routes = inventory::iter::<Box<dyn CommandHandler>>
+            .into_iter()
+            .map(|route| (route.route_id(), route.as_ref()))
+            .collect::<Vec<_>>();
+        router.add_handlers(routes);
+        let container = Container::new();
+        let command = Command {
+            source_nick: "test_user",
+            command_str: "foo".into(),
+            arguments: vec![],
+        };
+        let request = Request {
+            config: &config,
+            command: command,
+            state: &container,
+        };
+        let result = backward::Compat::new(router.route(&request).map(|res| match res {
+            Outcome::Failure(_) => Err(()),
+            Outcome::Success(res) => Ok(res),
+            Outcome::Forward(_) => Err(()),
+        }))
+        .wait();
+
+        assert_eq!(result, Ok(Response::Notice("foo".into())));
+    }
+}
