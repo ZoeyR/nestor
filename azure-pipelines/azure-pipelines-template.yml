@@ -31,9 +31,9 @@ jobs:
         apt-get update && apt-get install libssl-dev pkg-config cmake zlib1g-dev
         RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
       displayName: Install tarpaulin
-  - script: cargo install cargo-test-junit
+  - script: cargo install cargo-junit
     displayName: Install cargo junit formatter
-  - script: cargo test-junit --name testResults.xml
+  - script: cargo junit --name testResults.xml
     displayName: Build and run tests
   - task: PublishTestResults@2
     inputs:
