@@ -45,6 +45,7 @@ jobs:
   - ${{ if eq(parameters.name, 'Linux') }}:
     - script: |
         cargo tarpaulin --out Xml
+        python azure-pipelines/fix_coverage_for_cobertura.py cobertura.xml
         bash <(curl -s https://codecov.io/bash)
       displayName: Run code coverage
     - task: PublishCodeCoverageResults@1
