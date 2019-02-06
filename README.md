@@ -1,6 +1,10 @@
 # nestor
 
-![license][license-badge] [![Build Status](https://travis-ci.org/dgriffen/nestor.svg?branch=master)](https://travis-ci.org/dgriffen/nestor)
+![license][license-badge] 
+[![Build Status](https://dev.azure.com/dgriffen/nestor/_apis/build/status/dgriffen.nestor?branchName=master)](https://dev.azure.com/dgriffen/nestor/_build/latest?definitionId=3&branchName=master)
+[![codecov](https://codecov.io/gh/dgriffen/nestor/branch/master/graph/badge.svg)](https://codecov.io/gh/dgriffen/nestor)
+[![Crates.io](https://img.shields.io/crates/v/nestor.svg?maxAge=2592000)](https://crates.io/crates/nestor)
+
 
 nestor is an irc bot framework for Rust, inspired by the API of [rocket](https://rocket.rs).
 
