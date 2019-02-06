@@ -29,19 +29,19 @@ jobs:
   - ${{ if eq(parameters.name, 'Linux') }}:
     - script: |
         apt-get update && apt-get install libssl-dev pkg-config cmake zlib1g-dev
-        RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install --git https://github.com/xd009642/tarpaulin.git --branch issue-209
+        RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install --git https://github.com/xd009642/tarpaulin.git --branch develop
       displayName: Install tarpaulin
   - script: cargo install --git https://github.com/dgriffen/cargo-junit
     displayName: Install cargo junit formatter
   - script: cargo build
     displayName: Build
-  - script: cargo junit --name testResults.xml
+  - script: cargo junit --name $(parameters.name)-TEST.xml
     env: { RUST_BACKTRACE: 1 }
     displayName: Build and run tests
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '**/testResults.xml' 
+      testResultsFiles: '**/$(parameters.name)-TEST.xml' 
   - ${{ if eq(parameters.name, 'Linux') }}:
     - script: |
         cargo tarpaulin --out Xml
