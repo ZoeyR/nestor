@@ -29,7 +29,7 @@ jobs:
   - ${{ if eq(parameters.name, 'Linux') }}:
     - script: |
         apt-get update && apt-get install libssl-dev pkg-config cmake zlib1g-dev
-        RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
+        RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install --git https://github.com/xd009642/tarpaulin.git --branch develop
       displayName: Install tarpaulin
   - script: cargo install --git https://github.com/dgriffen/cargo-junit
     displayName: Install cargo junit formatter
@@ -42,10 +42,12 @@ jobs:
     inputs:
       testResultsFormat: 'JUnit'
       testResultsFiles: '**/testResults.xml' 
+      testRunTitle: '${{ parameters.name }} tests'
   - ${{ if eq(parameters.name, 'Linux') }}:
     - script: |
-        cargo tarpaulin --out Xml
-        python azure-pipelines/fix_coverage_for_cobertura.py cobertura.xml
+        mkdir coverageReport
+        cd coverageReport
+        cargo tarpaulin --root ../ --out Xml --out Html
       displayName: Run code coverage
     - script: bash <(curl -s https://codecov.io/bash)
       env:
@@ -54,4 +56,5 @@ jobs:
     - task: PublishCodeCoverageResults@1
       inputs:
         codeCoverageTool: 'cobertura'
-        summaryFileLocation: $(System.DefaultWorkingDirectory)/**/cobertura.xml
+        summaryFileLocation: $(System.DefaultWorkingDirectory)/**/coverageReport/cobertura.xml
+        reportDirectory: $(System.DefaultWorkingDirectory)/**/coverageReport
