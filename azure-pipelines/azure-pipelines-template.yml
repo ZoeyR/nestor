@@ -44,7 +44,10 @@ jobs:
       testResultsFiles: '**/testResults.xml' 
       testRunTitle: '${{ parameters.name }} tests'
   - ${{ if eq(parameters.name, 'Linux') }}:
-    - script: cargo tarpaulin --out Xml Html
+    - script: |
+        mkdir coverageReport
+        cd coverageReport
+        cargo tarpaulin --root ../ --out Xml --out Html
       displayName: Run code coverage
     - script: bash <(curl -s https://codecov.io/bash)
       env:
@@ -53,5 +56,5 @@ jobs:
     - task: PublishCodeCoverageResults@1
       inputs:
         codeCoverageTool: 'cobertura'
-        summaryFileLocation: $(System.DefaultWorkingDirectory)/**/cobertura.xml
-        reportDirectory: $(System.DefaultWorkingDirectory)/**/tarpaulin-report.html
+        summaryFileLocation: $(System.DefaultWorkingDirectory)/**/coverageReport/cobertura.xml
+        reportDirectory: $(System.DefaultWorkingDirectory)/**/coverageReport
