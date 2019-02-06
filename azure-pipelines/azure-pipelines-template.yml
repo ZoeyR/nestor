@@ -35,16 +35,16 @@ jobs:
     displayName: Install cargo junit formatter
   - script: cargo build
     displayName: Build
-  - script: cargo junit --name ${{ parameters.name }}-TEST.xml
+  - script: cargo junit --name testResults.xml
     env: { RUST_BACKTRACE: 1 }
     displayName: Build and run tests
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '**/${{ parameters.name }}-TEST.xml' 
+      testResultsFiles: '**/testResults.xml' 
+      testRunTitle: '${{ parameters.name }} tests'
   - ${{ if eq(parameters.name, 'Linux') }}:
-    - script: |
-        cargo tarpaulin --out Xml
+    - script: cargo tarpaulin --out Xml Html
       displayName: Run code coverage
     - script: bash <(curl -s https://codecov.io/bash)
       env:
@@ -54,3 +54,4 @@ jobs:
       inputs:
         codeCoverageTool: 'cobertura'
         summaryFileLocation: $(System.DefaultWorkingDirectory)/**/cobertura.xml
+        reportDirectory: $(System.DefaultWorkingDirectory)/**/tarpaulin-report.html
