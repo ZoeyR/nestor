@@ -87,3 +87,108 @@ impl<'a, 'r, T: Send + Sync + 'static> FromRequest<'a, 'r> for State<'r, T> {
             .ok_or(failure::err_msg("State object not managed."))
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::State;
+    use crate::request::FromRequest;
+    use crate::Command;
+    use crate::Config;
+    use crate::Request;
+    use state::Container;
+
+    #[test]
+    fn config_from_request() {
+        let config = toml::de::from_str(
+            r##"
+            blacklisted_users = []
+            command_indicator = ["~", "&&"]
+            alias_depth = 2
+        "##,
+        )
+        .unwrap();
+        let container = Container::new();
+        let command = Command::from_command_str("user", "foo bar baz").unwrap();
+        let request = Request {
+            config: &config,
+            command: command,
+            state: &container,
+        };
+
+        let config = <&Config as FromRequest>::from_request(&request).unwrap();
+
+        assert_eq!(config.bot_settings.command_indicator, ["~", "&&"]);
+    }
+
+    #[test]
+    fn command_from_request() {
+        let config = toml::de::from_str(
+            r##"
+            blacklisted_users = []
+            command_indicator = ["~", "&&"]
+            alias_depth = 2
+        "##,
+        )
+        .unwrap();
+        let container = Container::new();
+        let command = Command::from_command_str("user", "foo bar baz").unwrap();
+        let request = Request {
+            config: &config,
+            command: command,
+            state: &container,
+        };
+
+        let command = <&Command as FromRequest>::from_request(&request).unwrap();
+
+        assert_eq!(command.source_nick, "user");
+        assert_eq!(command.command_str, "foo");
+        assert_eq!(command.arguments, ["bar", "baz"]);
+    }
+
+    #[test]
+    fn state_from_request_success() {
+        let config = toml::de::from_str(
+            r##"
+            blacklisted_users = []
+            command_indicator = ["~", "&&"]
+            alias_depth = 2
+        "##,
+        )
+        .unwrap();
+        let container = Container::new();
+        container.set(42u32);
+        let command = Command::from_command_str("user", "foo bar baz").unwrap();
+        let request = Request {
+            config: &config,
+            command: command,
+            state: &container,
+        };
+
+        let state = <State<u32> as FromRequest>::from_request(&request).unwrap();
+
+        assert_eq!(*state, 42u32);
+    }
+
+    #[test]
+    fn state_from_request_failure() {
+        let config = toml::de::from_str(
+            r##"
+            blacklisted_users = []
+            command_indicator = ["~", "&&"]
+            alias_depth = 2
+        "##,
+        )
+        .unwrap();
+        let container = Container::new();
+        let command = Command::from_command_str("user", "foo bar baz").unwrap();
+        let request = Request {
+            config: &config,
+            command: command,
+            state: &container,
+        };
+
+        let state = <State<u32> as FromRequest>::from_request(&request);
+
+        assert!(state.is_err());
+    }
+}
