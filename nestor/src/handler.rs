@@ -70,6 +70,7 @@ pub trait CommandHandler {
     ) -> Result<Pin<Box<Future<Output = Outcome> + 'a>>, Error>;
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Command<'a> {
     pub source_nick: &'a str,
     pub command_str: String,
@@ -102,14 +103,7 @@ impl<'a> Command<'a> {
             })
             .nth(0)?;
 
-        let mut parts = command_str.trim().split(' ').map(String::from);
-        let command = parts.next()?;
-        let args = parts.collect();
-        Some(Command {
-            source_nick,
-            command_str: command,
-            arguments: args,
-        })
+        Command::from_command_str(source_nick, command_str)
     }
 
     pub fn from_command_str(source_nick: &'a str, command_str: &str) -> Option<Command<'a>> {
@@ -126,33 +120,37 @@ impl<'a> Command<'a> {
 
 #[cfg(test)]
 mod test {
-    #[test]
-    fn command_routes() {
+    use crate as nestor;
+    use crate::command;
+    use crate::request::State;
+    use crate::Outcome;
+    use crate::Response;
+
+    #[command("foo")]
+    fn foo() -> &'static str {
+        "foo"
+    }
+
+    #[command("failed")]
+    fn failed(_n: State<u32>) -> &'static str {
+        "failure"
+    }
+
+    #[command]
+    fn default() -> &'static str {
+        "default"
+    }
+
+    fn run(config: &str, command: &str, source: &str) -> Outcome {
         use super::{Command, Request};
-        use crate as nestor;
-        use crate::command;
         use crate::handler::{CommandHandler, CommandRouter};
         use crate::inventory;
-        use crate::Outcome;
-        use crate::Response;
         use futures_preview::FutureExt;
         use state::Container;
         use tokio::prelude::Future;
         use tokio_async_await::compat::backward;
 
-        let config = toml::de::from_str(
-            r##"
-        blacklisted_users = [""]
-        command_indicator = ["!"]
-        alias_depth = 3
-        "##,
-        )
-        .unwrap();
-
-        #[command("foo")]
-        fn foo() -> &'static str {
-            "foo"
-        }
+        let config = toml::de::from_str(config).unwrap();
 
         let mut router = CommandRouter::new();
         let routes = inventory::iter::<Box<dyn CommandHandler>>
@@ -161,23 +159,223 @@ mod test {
             .collect::<Vec<_>>();
         router.add_handlers(routes);
         let container = Container::new();
-        let command = Command {
-            source_nick: "test_user",
-            command_str: "foo".into(),
-            arguments: vec![],
-        };
+        let command = Command::from_command_str(source, command).unwrap();
         let request = Request {
             config: &config,
             command: command,
             state: &container,
         };
-        let result = backward::Compat::new(router.route(&request).map(|res| match res {
-            Outcome::Failure(_) => Err(()),
-            Outcome::Success(res) => Ok(res),
-            Outcome::Forward(_) => Err(()),
-        }))
-        .wait();
 
-        assert_eq!(result, Ok(Response::Notice("foo".into())));
+        let result: Result<Outcome, ()> =
+            backward::Compat::new(router.route(&request).map(Ok)).wait();
+        result.unwrap()
+    }
+
+    #[test]
+    fn command_routes() {
+        let result = run(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["!"]
+			alias_depth = 3
+		"##,
+            "foo",
+            "",
+        );
+
+        match result {
+            Outcome::Success(res) => assert_eq!(res, Response::Notice("foo".into())),
+            _ => panic!("unexpected outcome"),
+        }
+    }
+
+    #[test]
+    fn ignore_blacklist() {
+        let result = run(
+            r##"
+			blacklisted_users = ["ignored_user"]
+			command_indicator = ["!"]
+			alias_depth = 3
+		"##,
+            "foo",
+            "ignored_user",
+        );
+
+        match result {
+            Outcome::Success(res) => assert_eq!(res, Response::None),
+            _ => panic!("unexpected outcome"),
+        }
+    }
+
+    #[test]
+    fn allow_other_users() {
+        let result = run(
+            r##"
+			blacklisted_users = ["ignored_user"]
+			command_indicator = ["!"]
+			alias_depth = 3
+		"##,
+            "foo",
+            "normal_user",
+        );
+
+        match result {
+            Outcome::Success(res) => assert_eq!(res, Response::Notice("foo".into())),
+            _ => panic!("unexpected outcome"),
+        }
+    }
+
+    #[test]
+    fn failure_on_invalid_param() {
+        let result = run(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["!"]
+			alias_depth = 3
+		"##,
+            "failed",
+            "",
+        );
+
+        match result {
+            Outcome::Failure(_) => {}
+            _ => panic!("unexpected outcome"),
+        }
+    }
+
+    #[test]
+    fn default_handler() {
+        let result = run(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["!"]
+			alias_depth = 3
+		"##,
+            "not_present",
+            "",
+        );
+
+        match result {
+            Outcome::Success(res) => assert_eq!(res, Response::Notice("default".into())),
+            _ => panic!("unexpected outcome"),
+        }
+    }
+
+    #[test]
+    fn parse_empty_command() {
+        use super::Command;
+        let config = toml::de::from_str(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["~"]
+			alias_depth = 3
+		"##,
+        )
+        .unwrap();
+        let command = Command::try_parse("bot", "user", "~", &config).unwrap();
+
+        assert_eq!(command.command_str, "");
+        assert!(command.arguments.is_empty());
+    }
+
+    #[test]
+    fn parse_non_empty_command() {
+        use super::Command;
+        let config = toml::de::from_str(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["~"]
+			alias_depth = 3
+		"##,
+        )
+        .unwrap();
+        let command = Command::try_parse("bot", "user", "~foo", &config).unwrap();
+
+        assert_eq!(command.command_str, "foo");
+        assert!(command.arguments.is_empty());
+    }
+
+    #[test]
+    fn parse_command_with_args() {
+        use super::Command;
+        let config = toml::de::from_str(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["~"]
+			alias_depth = 3
+		"##,
+        )
+        .unwrap();
+        let command = Command::try_parse("bot", "user", "~foo bar baz", &config).unwrap();
+
+        assert_eq!(command.command_str, "foo");
+        assert_eq!(command.arguments, ["bar", "baz"]);
+    }
+
+    #[test]
+    fn message_with_no_command() {
+        use super::Command;
+        let config = toml::de::from_str(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["~"]
+			alias_depth = 3
+		"##,
+        )
+        .unwrap();
+        let command = Command::try_parse("bot", "user", "foo ~bar baz", &config);
+
+        assert!(command.is_none());
+    }
+
+    #[test]
+    fn parse_interpolated_command() {
+        use super::Command;
+        let config = toml::de::from_str(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["~"]
+			alias_depth = 3
+		"##,
+        )
+        .unwrap();
+        let command = Command::try_parse("bot", "user", "test {~foo bar} baz", &config).unwrap();
+
+        assert_eq!(command.command_str, "foo");
+        assert_eq!(command.arguments, ["bar"]);
+    }
+
+    #[test]
+    fn parse_command_trims_whitespace() {
+        use super::Command;
+        let config = toml::de::from_str(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["~"]
+			alias_depth = 3
+		"##,
+        )
+        .unwrap();
+        let command = Command::try_parse("bot", "user", "~   foo bar baz  ", &config).unwrap();
+
+        assert_eq!(command.command_str, "foo");
+        assert_eq!(command.arguments, ["bar", "baz"]);
+    }
+
+    #[test]
+    fn parse_command_uses_bot_name() {
+        use super::Command;
+        let config = toml::de::from_str(
+            r##"
+			blacklisted_users = []
+			command_indicator = ["~"]
+			alias_depth = 3
+		"##,
+        )
+        .unwrap();
+        let command = Command::try_parse("bot", "user", "bot: foo bar baz", &config).unwrap();
+
+        assert_eq!(command.command_str, "foo");
+        assert_eq!(command.arguments, ["bar", "baz"]);
     }
 }

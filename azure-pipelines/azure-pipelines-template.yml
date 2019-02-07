@@ -31,12 +31,11 @@ jobs:
         apt-get update && apt-get install libssl-dev pkg-config cmake zlib1g-dev
         RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install --git https://github.com/xd009642/tarpaulin.git --branch develop
       displayName: Install tarpaulin
-  - script: cargo install --git https://github.com/dgriffen/cargo-junit
+  - script: cargo install cargo-junit
     displayName: Install cargo junit formatter
   - script: cargo build
     displayName: Build
   - script: cargo junit --name testResults.xml
-    env: { RUST_BACKTRACE: 1 }
     displayName: Build and run tests
   - task: PublishTestResults@2
     inputs:
@@ -47,7 +46,7 @@ jobs:
     - script: |
         mkdir coverageReport
         cd coverageReport
-        cargo tarpaulin --root ../ --out Xml --out Html
+        cargo tarpaulin --ignore-panics --root ../ --out Xml --out Html
       displayName: Run code coverage
     - script: bash <(curl -s https://codecov.io/bash)
       env:
