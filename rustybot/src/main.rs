@@ -4,6 +4,9 @@
 #[macro_use]
 extern crate diesel;
 
+#[macro_use]
+extern crate diesel_migrations;
+
 use std::fs::File;
 use std::io::Read;
 use std::io::{BufRead, BufReader, Write};

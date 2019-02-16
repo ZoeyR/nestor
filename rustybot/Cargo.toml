@@ -9,6 +9,7 @@ futures = "0.1.25"
 irc = "0.13"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.0", features = ["sqlite", "chrono", "r2d2"] }
+diesel_migrations = "1.0"
 failure = "0.1"
 toml = "0.4"
 tokio = { version = "0.1.13", features = ["async-await-preview"] }
