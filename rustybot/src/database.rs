@@ -13,6 +13,8 @@ pub mod import_models;
 pub mod models;
 pub mod schema;
 
+embed_migrations!();
+
 pub struct Db {
     pool: Pool<ConnectionManager<SqliteConnection>>,
 }
@@ -21,6 +23,7 @@ impl Db {
     pub fn open(path: &str) -> Result<Self, Error> {
         let manager = ConnectionManager::<SqliteConnection>::new(path);
         let pool = Pool::builder().build(manager)?;
+        embedded_migrations::run(&pool.get()?)?;
 
         Ok(Db { pool })
     }
