@@ -7,13 +7,12 @@ use crate::handler::{Command, CommandHandler, CommandRouter};
 use crate::request::Request;
 use crate::response::{Outcome, Response};
 
-use futures::future::Future;
+use futures::future::TryFutureExt;
 use irc::client::ext::ClientExt;
 use irc::client::reactor::IrcReactor;
 use irc::client::IrcClient;
 use irc::proto::Message;
 use state::Container;
-use tokio_async_await::compat::backward;
 
 pub use failure::Error;
 
@@ -75,7 +74,7 @@ impl Nestor {
         client.identify().unwrap();
         reactor.register_client_with_handler(client, move |client, message| {
             let future = handle_message(nestor.clone(), client.clone(), message);
-            handle.spawn(backward::Compat::new(future).map_err(|_| ()));
+            handle.spawn(Box::pin(future.map_err(|_| ())).compat());
             Ok(())
         });
 

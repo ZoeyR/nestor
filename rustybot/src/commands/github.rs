@@ -1,6 +1,7 @@
 use crate::config::RustybotSettings;
 
 use failure::Error;
+use futures::compat::Future01CompatExt;
 use nestor::command;
 use nestor::config::Config;
 use nestor::handler::Command;
@@ -10,7 +11,6 @@ use reqwest::r#async::Client;
 use reqwest::StatusCode;
 use serde::Deserialize;
 use std::ops::Deref;
-use tokio::await;
 
 #[derive(Deserialize)]
 struct PullRequest {
@@ -59,11 +59,12 @@ pub async fn rfc<'a>(
                 r_config.contact
             )
         )
-        .send())?;
+        .send()
+        .compat())?;
 
     match response.status() {
         StatusCode::OK => {
-            let pull_request: PullRequest = await!(response.json())?;
+            let pull_request: PullRequest = await!(response.json().compat())?;
             let state = if pull_request.merged {
                 "merged"
             } else {

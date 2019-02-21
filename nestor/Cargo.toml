@@ -10,13 +10,11 @@ edition = "2018"
 
 [dependencies]
 failure = "0.1"
-futures = "0.1.25"
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.4"
 irc = "0.13"
 state = { version = "0.4", features = ["tls"] }
-tokio = { version = "0.1.13", features = ["async-await-preview"] }
-tokio-async-await = "0.1.4"
-futures-preview = { package = "futures-preview", version = "0.3.0-alpha.12" }
+tokio = { version = "0.1.13" }
+futures-preview = { version = "0.3.0-alpha.13", features = ["compat"] }
 nestor_codegen = { version = "0.1.0", path = "../nestor-codegen" }
 inventory = "0.1"

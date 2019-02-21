@@ -6,6 +6,8 @@ jobs:
     matrix:
       nightly:
         rustup_toolchain: nightly
+      minimum-nightly:
+        rustup_toolchain: nightly-2019-02-15
   steps:
   - ${{ if ne(parameters.name, 'Windows') }}:
     # Linux and macOS.
@@ -25,12 +27,13 @@ jobs:
   - script: |
         rustc -Vv
         cargo -V
+        echo $RUSTUP_TOOLCHAIN
     displayName: Query rust and cargo versions
-  - ${{ if eq(parameters.name, 'Linux') }}:
-    - script: |
+  - script: |
         apt-get update && apt-get install libssl-dev pkg-config cmake zlib1g-dev
         RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install --git https://github.com/xd009642/tarpaulin.git --branch develop
-      displayName: Install tarpaulin
+    displayName: Install tarpaulin
+    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
   - script: cargo install cargo-junit
     displayName: Install cargo junit formatter
   - script: cargo build
@@ -42,18 +45,20 @@ jobs:
       testResultsFormat: 'JUnit'
       testResultsFiles: '**/testResults.xml' 
       testRunTitle: '${{ parameters.name }} tests'
-  - ${{ if eq(parameters.name, 'Linux') }}:
-    - script: |
+  - script: |
         mkdir coverageReport
         cd coverageReport
         cargo tarpaulin --ignore-panics --root ../ --out Xml --out Html
-      displayName: Run code coverage
-    - script: bash <(curl -s https://codecov.io/bash)
-      env:
-        CODECOV_TOKEN: $(CODECOV_TOKEN_SECRET)
-      displayName: Publish to codecov.io
-    - task: PublishCodeCoverageResults@1
-      inputs:
-        codeCoverageTool: 'cobertura'
-        summaryFileLocation: $(System.DefaultWorkingDirectory)/**/coverageReport/cobertura.xml
-        reportDirectory: $(System.DefaultWorkingDirectory)/**/coverageReport
+    displayName: Run code coverage
+    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
+  - script: bash <(curl -s https://codecov.io/bash)
+    env:
+      CODECOV_TOKEN: $(CODECOV_TOKEN_SECRET)
+    displayName: Publish to codecov.io
+    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: 'cobertura'
+      summaryFileLocation: $(System.DefaultWorkingDirectory)/**/coverageReport/cobertura.xml
+      reportDirectory: $(System.DefaultWorkingDirectory)/**/coverageReport
+    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
