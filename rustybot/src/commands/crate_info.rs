@@ -3,6 +3,7 @@ use std::ops::Deref;
 use crate::config::RustybotSettings;
 
 use failure::Error;
+use futures::compat::Future01CompatExt;
 use nestor::command;
 use nestor::config::Config as NestorConfig;
 use nestor::handler::Command;
@@ -11,7 +12,6 @@ use reqwest::header::USER_AGENT;
 use reqwest::r#async::Client;
 use reqwest::StatusCode;
 use serde::Deserialize;
-use tokio::await;
 
 #[derive(Deserialize)]
 struct CratesApi {
@@ -56,11 +56,12 @@ pub async fn crate_info<'a>(
                 r_config.contact
             ),
         )
-        .send())?;
+        .send()
+        .compat())?;
 
     match response.status() {
         StatusCode::OK => {
-            let api: CratesApi = await!(response.json())?;
+            let api: CratesApi = await!(response.json().compat())?;
 
             let crate_url = format!("https://crates.io/crates/{}", command.arguments[0]);
 

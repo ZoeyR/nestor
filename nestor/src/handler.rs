@@ -145,10 +145,8 @@ mod test {
         use super::{Command, Request};
         use crate::handler::{CommandHandler, CommandRouter};
         use crate::inventory;
-        use futures_preview::FutureExt;
+        use futures::executor::block_on;
         use state::Container;
-        use tokio::prelude::Future;
-        use tokio_async_await::compat::backward;
 
         let config = toml::de::from_str(config).unwrap();
 
@@ -166,9 +164,7 @@ mod test {
             state: &container,
         };
 
-        let result: Result<Outcome, ()> =
-            backward::Compat::new(router.route(&request).map(Ok)).wait();
-        result.unwrap()
+        block_on(router.route(&request))
     }
 
     #[test]
