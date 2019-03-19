@@ -48,7 +48,7 @@ jobs:
   - script: |
         mkdir coverageReport
         cd coverageReport
-        cargo tarpaulin --ignore-panics --root ../ --out Xml --out Html
+        taskset -c 0 cargo tarpaulin --ignore-panics --root ../ --out Xml --out Html
     displayName: Run code coverage
     condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
   - script: bash <(curl -s https://codecov.io/bash)
