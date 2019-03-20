@@ -129,6 +129,8 @@ fn bot_forward_loop() {
 }
 
 fn setup(port: u16) -> TcpStream {
+    std::panic::set_hook(Box::new(|_| {}));
+
     let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap();
 
     thread::spawn(move || {
