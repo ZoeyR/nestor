@@ -1,5 +1,6 @@
 mod crate_info;
 mod default;
+mod factoid_metadata;
 mod forget;
 mod github;
 mod learn;
