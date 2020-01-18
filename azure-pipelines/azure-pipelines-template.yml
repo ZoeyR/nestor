@@ -37,7 +37,7 @@ jobs:
         cargo kcov --print-install-kcov-sh | sh
     displayName: Install kcov
     condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
-  - script: cargo install --git https://github.com/dgriffen/cargo-junit
+  - script: cargo install --git https://github.com/ZoeyR/cargo-junit
     displayName: Install cargo junit formatter
   - script: cargo build
     displayName: Build
