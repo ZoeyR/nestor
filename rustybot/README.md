@@ -29,6 +29,6 @@ In addition to the standard set of commands rustybot can be taught factoids whic
 - sqlite3
 
 ### Building
-- `git clone https://github.com/dgriffen/rustybot.git`
+- `git clone https://github.com/ZoeyR/nestor.git`
 - `cd rustybot`
 - `cargo build
