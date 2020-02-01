@@ -6,7 +6,7 @@ use crate::config::Config;
 use crate::request::Request;
 use crate::response::{Outcome, Response};
 
-use failure::Error;
+use anyhow::Error;
 
 pub(crate) struct CommandRouter {
     commands: HashMap<&'static str, &'static dyn CommandHandler>,
@@ -47,12 +47,12 @@ impl CommandRouter {
         let c: &str = request.command.command_str.as_ref();
         if let Some(handler) = self.commands.get(c) {
             match handler.handle(&request) {
-                Ok(fut) => await!(fut),
+                Ok(fut) => fut.await,
                 Err(err) => return Outcome::Failure(err),
             }
         } else if let Some(handler) = &self.default {
             match handler.handle(&request) {
-                Ok(fut) => await!(fut),
+                Ok(fut) => fut.await,
                 Err(err) => return Outcome::Failure(err),
             }
         } else {
@@ -61,13 +61,13 @@ impl CommandRouter {
     }
 }
 
-pub trait CommandHandler {
+pub trait CommandHandler: Send + Sync {
     fn route_id(&self) -> Option<&'static str>;
 
     fn handle<'a, 'r>(
         &'a self,
         request: &'a Request<'r>,
-    ) -> Result<Pin<Box<Future<Output = Outcome> + 'a>>, Error>;
+    ) -> Result<Pin<Box<dyn Future<Output = Outcome> + Send + 'a>>, Error>;
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -144,7 +144,6 @@ mod test {
     fn run(config: &str, command: &str, source: &str) -> Outcome {
         use super::{Command, Request};
         use crate::handler::{CommandHandler, CommandRouter};
-        use crate::inventory;
         use futures::executor::block_on;
         use state::Container;
 

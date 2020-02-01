@@ -4,9 +4,10 @@ use crate::config::Config;
 use crate::handler::Command;
 use crate::Nestor;
 
-use failure::Error;
+use anyhow::anyhow;
+use anyhow::Error;
 use irc::client::prelude::Message;
-use irc::client::IrcClient;
+use irc::client::Client;
 use state::Container;
 
 pub struct Request<'r> {
@@ -18,7 +19,7 @@ pub struct Request<'r> {
 impl<'r> Request<'r> {
     pub fn from_message<'c>(
         nestor: &'r Nestor,
-        client: &'c IrcClient,
+        client: &'c Client,
         message: &'r Message,
     ) -> Option<(&'r str, Self)> {
         let (default_target, msg) = match message.command {
@@ -84,7 +85,7 @@ impl<'a, 'r, T: Send + Sync + 'static> FromRequest<'a, 'r> for State<'r, T> {
             .state
             .try_get::<T>()
             .map(State)
-            .ok_or(failure::err_msg("State object not managed."))
+            .ok_or(anyhow!("State object not managed."))
     }
 }
 

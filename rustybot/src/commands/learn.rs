@@ -5,17 +5,13 @@ use crate::config::{is_admin, RustybotSettings};
 use crate::database::models::{Factoid, FactoidEnum};
 use crate::database::Db;
 
-use failure::Error;
+use anyhow::Result;
 use nestor::command;
 use nestor::handler::Command;
 use nestor::request::State;
 
 #[command("learn")]
-pub fn learn(
-    command: &Command,
-    config: State<RustybotSettings>,
-    db: State<Db>,
-) -> Result<String, Error> {
+pub fn learn(command: &Command, config: State<RustybotSettings>, db: State<Db>) -> Result<String> {
     let operation_index = match command
         .arguments
         .iter()
@@ -33,7 +29,9 @@ pub fn learn(
     {
         Some(index) => index,
         None => {
-            return Ok("Invalid command format, please use ~learn <factoid> = <description>".into());
+            return Ok(
+                "Invalid command format, please use ~learn <factoid> = <description>".into(),
+            );
         }
     };
 
@@ -142,7 +140,7 @@ fn learn_helper<E, F, T, G>(
     db: &Db,
     intent: FactoidEnum,
     editor: EditOptions<E, F>,
-) -> Result<String, Error>
+) -> Result<String>
 where
     E: for<'factoid> Fn(&'factoid Factoid) -> G,
     F: Fn() -> T,

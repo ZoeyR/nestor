@@ -1,27 +1,27 @@
 use crate::database::models::WinErrorVariant;
 use crate::database::Db;
 
-use failure::Error;
+use anyhow::Result;
 use nestor::command;
 use nestor::handler::Command;
 use nestor::request::State;
 
 #[command("hresult")]
-pub fn hresult(command: &Command, db: State<Db>) -> Result<String, Error> {
+pub fn hresult(command: &Command, db: State<Db>) -> Result<String> {
     generic_error(command, WinErrorVariant::HResult, &db)
 }
 
 #[command("ntstatus")]
-pub fn nt_status(command: &Command, db: State<Db>) -> Result<String, Error> {
+pub fn nt_status(command: &Command, db: State<Db>) -> Result<String> {
     generic_error(command, WinErrorVariant::NtStatus, &db)
 }
 
 #[command("win32")]
-pub fn win32(command: &Command, db: State<Db>) -> Result<String, Error> {
+pub fn win32(command: &Command, db: State<Db>) -> Result<String> {
     generic_error(command, WinErrorVariant::Win32, &db)
 }
 
-fn generic_error(command: &Command, variant: WinErrorVariant, db: &Db) -> Result<String, Error> {
+fn generic_error(command: &Command, variant: WinErrorVariant, db: &Db) -> Result<String> {
     if command.arguments.len() != 1 {
         return Ok(format!(
             "Invalid command format, please use ~{} <code>. <code> can either be hex, decimal, or the symbol name.",

@@ -1,4 +1,4 @@
-use failure::Error;
+use anyhow::Error;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Response {

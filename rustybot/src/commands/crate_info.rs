@@ -2,14 +2,13 @@ use std::ops::Deref;
 
 use crate::config::RustybotSettings;
 
-use failure::Error;
-use futures::compat::Future01CompatExt;
+use anyhow::Result;
 use nestor::command;
 use nestor::config::Config as NestorConfig;
 use nestor::handler::Command;
 use nestor::request::State;
 use reqwest::header::USER_AGENT;
-use reqwest::r#async::Client;
+use reqwest::Client;
 use reqwest::StatusCode;
 use serde::Deserialize;
 
@@ -32,13 +31,13 @@ pub async fn crate_info<'a>(
     command: &'a Command<'a>,
     nestor_config: &'a NestorConfig,
     r_config: State<'a, RustybotSettings>,
-) -> Result<String, Error> {
+) -> Result<String> {
     if command.arguments.len() != 1 {
         return Ok("Invalid command format, please use ~crate <crate>".into());
     }
 
     let client = Client::builder().build()?;
-    let mut response = await!(client
+    let response = client
         .get(&format!(
             "https://crates.io/api/v1/crates/{}",
             command.arguments[0]
@@ -57,11 +56,11 @@ pub async fn crate_info<'a>(
             ),
         )
         .send()
-        .compat())?;
+        .await?;
 
     match response.status() {
         StatusCode::OK => {
-            let api: CratesApi = await!(response.json().compat())?;
+            let api: CratesApi = response.json().await?;
 
             let crate_url = format!("https://crates.io/crates/{}", command.arguments[0]);
 

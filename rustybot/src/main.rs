@@ -1,5 +1,4 @@
 #![allow(proc_macro_derive_resolution_fallback)]
-#![feature(await_macro, async_await, futures_api)]
 
 #[macro_use]
 extern crate diesel;

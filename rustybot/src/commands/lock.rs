@@ -2,17 +2,13 @@ use crate::config::is_admin;
 use crate::config::RustybotSettings;
 use crate::database::Db;
 
-use failure::Error;
+use anyhow::Result;
 use nestor::command;
 use nestor::handler::Command;
 use nestor::request::State;
 
 #[command("lock")]
-pub fn lock(
-    command: &Command,
-    config: State<RustybotSettings>,
-    db: State<Db>,
-) -> Result<String, Error> {
+pub fn lock(command: &Command, config: State<RustybotSettings>, db: State<Db>) -> Result<String> {
     if !is_admin(command.source_nick, &config) {
         return Ok("Only an admin can lock a factoid".into());
     }
@@ -41,11 +37,7 @@ pub fn lock(
 }
 
 #[command("unlock")]
-pub fn unlock(
-    command: &Command,
-    config: State<RustybotSettings>,
-    db: State<Db>,
-) -> Result<String, Error> {
+pub fn unlock(command: &Command, config: State<RustybotSettings>, db: State<Db>) -> Result<String> {
     if !is_admin(command.source_nick, &config) {
         return Ok("Only an admin can unlock a factoid".into());
     }

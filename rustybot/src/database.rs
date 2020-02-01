@@ -3,11 +3,11 @@ use self::models::{
     Factoid, FactoidEnum, NewFactoid, NewQuote, NewWinError, Quote, WinError, WinErrorVariant,
 };
 
+use anyhow::Result;
 use chrono::offset::Utc;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::sqlite::SqliteConnection;
-use failure::Error;
 
 pub mod import_models;
 pub mod models;
@@ -20,7 +20,7 @@ pub struct Db {
 }
 
 impl Db {
-    pub fn open(path: &str) -> Result<Self, Error> {
+    pub fn open(path: &str) -> Result<Self> {
         let manager = ConnectionManager::<SqliteConnection>::new(path);
         let pool = Pool::builder().build(manager)?;
         embedded_migrations::run(&pool.get()?)?;
@@ -28,7 +28,7 @@ impl Db {
         Ok(Db { pool })
     }
 
-    pub fn get_factoid(&self, key: &str) -> Result<Option<Factoid>, Error> {
+    pub fn get_factoid(&self, key: &str) -> Result<Option<Factoid>> {
         use self::schema::factoids::dsl::*;
 
         let connection = self.pool.get()?;
@@ -40,14 +40,14 @@ impl Db {
             .map_err(From::from)
     }
 
-    pub fn all_factoids(&self) -> Result<Vec<Factoid>, Error> {
+    pub fn all_factoids(&self) -> Result<Vec<Factoid>> {
         use self::schema::factoids;
 
         let connection = self.pool.get()?;
         Ok(factoids::table.load(&connection)?)
     }
 
-    pub fn create_from_rfactoid(&self, rfactoid: &RFactoid) -> Result<(), Error> {
+    pub fn create_from_rfactoid(&self, rfactoid: &RFactoid) -> Result<()> {
         use self::schema::factoids;
 
         let connection = self.pool.get()?;
@@ -67,7 +67,7 @@ impl Db {
         factoid: &str,
         description: &str,
         locked: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         use self::schema::factoids;
 
         let connection = self.pool.get()?;
@@ -88,14 +88,14 @@ impl Db {
         Ok(())
     }
 
-    pub fn all_quotes(&self) -> Result<Vec<Quote>, Error> {
+    pub fn all_quotes(&self) -> Result<Vec<Quote>> {
         use self::schema::qotd;
 
         let connection = self.pool.get()?;
         Ok(qotd::table.load(&connection)?)
     }
 
-    pub fn create_quote(&self, quote: &str) -> Result<(), Error> {
+    pub fn create_quote(&self, quote: &str) -> Result<()> {
         use self::schema::qotd;
 
         let connection = self.pool.get()?;
@@ -112,7 +112,7 @@ impl Db {
         &self,
         error_code: u32,
         variant: WinErrorVariant,
-    ) -> Result<Option<WinError>, Error> {
+    ) -> Result<Option<WinError>> {
         use self::schema::winerrors::dsl::*;
 
         let connection = self.pool.get()?;
@@ -128,7 +128,7 @@ impl Db {
         &self,
         error_name: &str,
         variant: WinErrorVariant,
-    ) -> Result<Option<WinError>, Error> {
+    ) -> Result<Option<WinError>> {
         use self::schema::winerrors::dsl::*;
 
         let connection = self.pool.get()?;
@@ -146,7 +146,7 @@ impl Db {
         error_type: WinErrorVariant,
         name: &str,
         description: &str,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         use self::schema::winerrors;
 
         let connection = self.pool.get()?;
