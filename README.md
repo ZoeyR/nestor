@@ -10,7 +10,7 @@ nestor is an irc bot framework for Rust, inspired by the API of [rocket](https:/
 
 ## Development
 ### Prerequisites
-- rustc and cargo nightly (2019-01-21 or newer)
+- rustc and cargo (1.41.0 or newer)
 - openssl dev libraries on mac or linux
 
 ### Building

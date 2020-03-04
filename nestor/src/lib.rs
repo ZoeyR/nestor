@@ -1,20 +1,17 @@
-#![feature(await_macro, async_await, futures_api)]
-
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::config::Config;
 use crate::handler::{Command, CommandHandler, CommandRouter};
 use crate::request::Request;
 use crate::response::{Outcome, Response};
 
-use futures::future::TryFutureExt;
-use irc::client::ext::ClientExt;
-use irc::client::reactor::IrcReactor;
-use irc::client::IrcClient;
-use irc::proto::Message;
+use futures::prelude::*;
+use irc::client::prelude::*;
 use state::Container;
 
-pub use failure::Error;
+use anyhow::anyhow;
+pub use anyhow::Error;
+pub use anyhow::Result;
 
 #[doc(hidden)]
 pub use inventory;
@@ -65,38 +62,42 @@ impl Nestor {
             .collect();
         self.router.add_handlers(routes);
 
-        let nestor = Rc::new(self);
-        let mut reactor = IrcReactor::new().unwrap();
-        let handle = reactor.inner_handle();
-        let client = reactor
-            .prepare_client_and_connect(&nestor.config.irc_config)
-            .unwrap();
-        client.identify().unwrap();
-        reactor.register_client_with_handler(client, move |client, message| {
-            let future = handle_message(nestor.clone(), client.clone(), message);
-            handle.spawn(Box::pin(future.map_err(|_| ())).compat());
-            Ok(())
-        });
+        let nestor = Arc::new(self);
 
-        reactor.run().unwrap();
+        let mut runtime = tokio::runtime::Runtime::new().unwrap();
+        runtime.block_on(async {
+            let mut client = Client::from_config(nestor.config.irc_config.clone())
+                .await
+                .unwrap();
+            client.identify().unwrap();
+            let mut stream = client.stream().unwrap();
+            let client = Arc::new(client);
+            while let Some(message) = stream.next().await.transpose().unwrap() {
+                let nestor = nestor.clone();
+                let client = client.clone();
+                tokio::spawn(async move {
+                    let _ = handle_message(nestor, client, message).await;
+                });
+            }
+        });
     }
 }
 
 async fn handle_message(
-    nestor: Rc<Nestor>,
-    client: IrcClient,
+    nestor: Arc<Nestor>,
+    client: Arc<Client>,
     message: Message,
 ) -> Result<(), Error> {
     if let Some((responder, mut request)) = Request::from_message(&nestor, &client, &message) {
         for _ in 0..nestor.config.bot_settings.alias_depth {
-            let response = await!(nestor.router.route(&request));
+            let response = nestor.router.route(&request).await;
             let response = match response {
                 Outcome::Forward(c) => {
                     request = Request {
                         config: &nestor.config,
                         state: &nestor.state,
                         command: Command::from_command_str(request.command.source_nick, &c)
-                            .ok_or(failure::err_msg("Internal error with command alias"))?,
+                            .ok_or(anyhow!("Internal error with command alias"))?,
                     };
                     continue;
                 }

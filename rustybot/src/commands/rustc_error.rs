@@ -1,9 +1,9 @@
-use failure::Error;
+use anyhow::Result;
 use nestor::command;
 use nestor::handler::Command;
 
 #[command("error")]
-pub fn rustc_error(command: &Command) -> Result<String, Error> {
+pub fn rustc_error(command: &Command) -> Result<String> {
     if command.arguments.len() != 1 {
         return Ok("Invalid command format, please use ~error <error code>".into());
     }

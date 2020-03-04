@@ -1,6 +1,4 @@
-#![feature(await_macro, async_await, futures_api)]
-
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 
@@ -51,9 +49,16 @@ fn bot_say() {
         .unwrap();
 
     let reader = BufReader::new(&stream);
-    let line = reader.lines().skip(3).next().unwrap().unwrap();
+    let line = reader
+        .lines()
+        .filter_map(Result::ok)
+        .filter(|line| !line.starts_with("PING"))
+        .skip(3)
+        .next()
+        .unwrap();
 
-    assert_eq!(line, "PRIVMSG Testhost :hello");
+    println!("{}", line);
+    assert_eq!(line, "PRIVMSG Testhost hello");
 
     stream
         .write_all(b":Testhost PRIVMSG test :~die\r\n")
@@ -68,8 +73,13 @@ fn bot_act() {
         .unwrap();
 
     let reader = BufReader::new(&stream);
-    let line = reader.lines().skip(3).next().unwrap().unwrap();
-
+    let line = reader
+        .lines()
+        .filter_map(Result::ok)
+        .filter(|line| !line.starts_with("PING"))
+        .skip(3)
+        .next()
+        .unwrap();
     assert_eq!(line, "PRIVMSG Testhost :\u{1}ACTION action\u{1}");
 
     stream
@@ -85,9 +95,15 @@ fn bot_notice() {
         .unwrap();
 
     let reader = BufReader::new(&stream);
-    let line = reader.lines().skip(3).next().unwrap().unwrap();
+    let line = reader
+        .lines()
+        .filter_map(Result::ok)
+        .filter(|line| !line.starts_with("PING"))
+        .skip(3)
+        .next()
+        .unwrap();
 
-    assert_eq!(line, "NOTICE Testhost :notice");
+    assert_eq!(line, "NOTICE Testhost notice");
 
     stream
         .write_all(b":Testhost PRIVMSG test :~die\r\n")
@@ -102,9 +118,15 @@ fn bot_forward() {
         .unwrap();
 
     let reader = BufReader::new(&stream);
-    let line = reader.lines().skip(3).next().unwrap().unwrap();
+    let line = reader
+        .lines()
+        .filter_map(Result::ok)
+        .filter(|line| !line.starts_with("PING"))
+        .skip(3)
+        .next()
+        .unwrap();
 
-    assert_eq!(line, "PRIVMSG Testhost :forwarded");
+    assert_eq!(line, "PRIVMSG Testhost forwarded");
 
     stream
         .write_all(b":Testhost PRIVMSG test :~die\r\n")
@@ -117,9 +139,14 @@ fn bot_forward_loop() {
     stream
         .write_all(b":Testhost PRIVMSG test :~forward-loop\r\n")
         .unwrap();
-
     let reader = BufReader::new(&stream);
-    let line = reader.lines().skip(3).next().unwrap().unwrap();
+    let line = reader
+        .lines()
+        .filter_map(Result::ok)
+        .filter(|line| !line.starts_with("PING"))
+        .skip(3)
+        .next()
+        .unwrap();
 
     assert_eq!(line, "NOTICE Testhost :alias depth too deep");
 

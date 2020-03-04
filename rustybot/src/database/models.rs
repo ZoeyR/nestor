@@ -6,13 +6,13 @@ use super::schema::factoids;
 use super::schema::qotd;
 use super::schema::winerrors;
 
+use anyhow::{anyhow, Error, Result};
 use chrono::naive::NaiveDateTime;
 use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSql};
 use diesel::serialize::{self, Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::sqlite::Sqlite;
-use failure::{format_err, Error};
 use nestor::response::Response;
 
 #[derive(Queryable)]
@@ -68,7 +68,7 @@ pub struct NewWinError<'a> {
 }
 
 impl<'a> NewFactoid<'a> {
-    pub fn from_rfactoid(factoid: &'a RFactoid) -> Result<Self, Error> {
+    pub fn from_rfactoid(factoid: &'a RFactoid) -> Result<Self> {
         let intent = match &factoid.val.intent {
             Some(intent) => FactoidEnum::from_str(intent)?,
             None => FactoidEnum::Forget,
@@ -152,13 +152,13 @@ impl ToString for FactoidEnum {
 
 impl FromStr for FactoidEnum {
     type Err = Error;
-    fn from_str(val: &str) -> Result<Self, Self::Err> {
+    fn from_str(val: &str) -> Result<Self> {
         match val {
             "act" => Ok(FactoidEnum::Act),
             "say" => Ok(FactoidEnum::Say),
             "alias" => Ok(FactoidEnum::Alias),
             "forget" => Ok(FactoidEnum::Forget),
-            _ => Err(format_err!("Unrecognized enum variant")),
+            _ => Err(anyhow!("Unrecognized enum variant")),
         }
     }
 }
@@ -200,12 +200,12 @@ impl ToString for WinErrorVariant {
 
 impl FromStr for WinErrorVariant {
     type Err = Error;
-    fn from_str(val: &str) -> Result<Self, Self::Err> {
+    fn from_str(val: &str) -> Result<Self> {
         match val {
             "hresult" => Ok(WinErrorVariant::HResult),
             "ntstatus" => Ok(WinErrorVariant::NtStatus),
             "win32" => Ok(WinErrorVariant::Win32),
-            _ => Err(format_err!("Unrecognized enum variant")),
+            _ => Err(anyhow!("Unrecognized enum variant")),
         }
     }
 }

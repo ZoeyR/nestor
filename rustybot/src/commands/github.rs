@@ -1,13 +1,12 @@
 use crate::config::RustybotSettings;
 
-use failure::Error;
-use futures::compat::Future01CompatExt;
+use anyhow::Result;
 use nestor::command;
 use nestor::config::Config;
 use nestor::handler::Command;
 use nestor::request::State;
 use reqwest::header::{ACCEPT, USER_AGENT};
-use reqwest::r#async::Client;
+use reqwest::Client;
 use reqwest::StatusCode;
 use serde::Deserialize;
 use std::ops::Deref;
@@ -26,7 +25,7 @@ pub async fn rfc<'a>(
     command: &'a Command<'a>,
     config: &'a Config,
     r_config: State<'a, RustybotSettings>,
-) -> Result<String, Error> {
+) -> Result<String> {
     let rfc = match command.arguments.get(0).map(|arg| arg.parse::<u32>()) {
         Some(Ok(rfc)) => rfc,
         Some(Err(_)) => return Ok("RFC must be a number.".into()),
@@ -36,14 +35,14 @@ pub async fn rfc<'a>(
     };
 
     let client = Client::builder().build()?;
-    let mut response = await!(client
+    let response = client
         .get(&format!(
             "https://api.github.com/repos/rust-lang/rfcs/pulls/{}",
             rfc
         ))
         .basic_auth(
             &r_config.github_auth.username,
-            Some(&r_config.github_auth.password)
+            Some(&r_config.github_auth.password),
         )
         .header(ACCEPT, "application/vnd.github.v3+json")
         .header(
@@ -57,14 +56,14 @@ pub async fn rfc<'a>(
                     .map(|s| s.deref())
                     .unwrap_or("rustybot"),
                 r_config.contact
-            )
+            ),
         )
         .send()
-        .compat())?;
+        .await?;
 
     match response.status() {
         StatusCode::OK => {
-            let pull_request: PullRequest = await!(response.json().compat())?;
+            let pull_request: PullRequest = response.json().await?;
             let state = if pull_request.merged {
                 "merged"
             } else {

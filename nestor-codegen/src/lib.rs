@@ -15,19 +15,19 @@ const COMMAND_PREFIX: &'static str = "nestor_command_handler_";
 pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
     let macro_args = parse_macro_input!(macro_args as AttributeArgs);
     let route = match macro_args.get(0) {
-        Some(NestedMeta::Literal(lit)) => quote! { Some(#lit) },
+        Some(NestedMeta::Lit(lit)) => quote! { Some(#lit) },
         _ => quote! { None },
     };
 
     let item = parse_macro_input!(item as ItemFn);
-    let fn_name = &item.ident;
+    let fn_name = &item.sig.ident;
     let name = syn::Ident::new(
-        &format!("{}{}", COMMAND_PREFIX, &item.ident),
-        item.ident.span(),
+        &format!("{}{}", COMMAND_PREFIX, &item.sig.ident),
+        item.sig.ident.span(),
     );
 
     let args: Vec<_> = item
-        .decl
+        .sig
         .inputs
         .iter()
         .map(|input| {
@@ -36,16 +36,16 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
         })
         .collect();
 
-    let (span, ty) = match &item.decl.output {
-        syn::ReturnType::Default => (item.decl.output.span(), quote! {()}),
+    let (span, ty) = match &item.sig.output {
+        syn::ReturnType::Default => (item.sig.output.span(), quote! {()}),
         syn::ReturnType::Type(_, ty) => (ty.span(), quote! {#ty}),
     };
 
-    let function_call = if let Some(_) = item.asyncness {
+    let function_call = if let Some(_) = item.sig.asyncness {
         quote_spanned! {span=> {
             let fut = #fn_name(#(#args),*);
             async {
-                let val = r#await!(fut);
+                let val = fut.await;
                 <#ty as IntoOutcome>::into_outcome(val)
             }
         }}
@@ -70,7 +70,7 @@ pub fn command(macro_args: TokenStream, item: TokenStream) -> TokenStream {
             fn handle<'a, 'r>(
                 &'a self,
                 request: &'a nestor::request::Request<'r>,
-            ) -> Result<std::pin::Pin<Box<std::future::Future<Output = nestor::response::Outcome> + 'a>>, nestor::Error> {
+            ) -> Result<std::pin::Pin<Box<std::future::Future<Output = nestor::response::Outcome> + Send + 'a>>, nestor::Error> {
                 use std::pin::Pin;
                 use nestor::response::IntoOutcome;
 

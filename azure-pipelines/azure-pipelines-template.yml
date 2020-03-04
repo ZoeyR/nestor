@@ -4,10 +4,10 @@ jobs:
     vmImage: ${{ parameters.vmImage }}
   strategy:
     matrix:
-      nightly:
-        rustup_toolchain: nightly
-      minimum-nightly:
-        rustup_toolchain: nightly-2019-02-15
+      stable:
+        rustup_toolchain: stable
+      minimum-stable:
+        rustup_toolchain: 1.41.0
   steps:
   - ${{ if ne(parameters.name, 'Windows') }}:
     # Linux and macOS.
@@ -22,6 +22,7 @@ jobs:
         rustup-init.exe -y --default-toolchain %RUSTUP_TOOLCHAIN%
         set PATH=%PATH%;%USERPROFILE%\.cargo\bin
         echo "##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin"
+        rustup update
       displayName: Install rust (windows)
   # All platforms.
   - script: |
@@ -36,7 +37,7 @@ jobs:
         cargo install cargo-kcov
         cargo kcov --print-install-kcov-sh | sh
     displayName: Install kcov
-    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
+    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'Linux stable'))
   - script: cargo install --git https://github.com/ZoeyR/cargo-junit
     displayName: Install cargo junit formatter
   - script: cargo build
@@ -54,15 +55,15 @@ jobs:
         cd coverageReport/kcov-merged
         python ../../azure-pipelines/fix_coverage_for_cobertura.py
     displayName: Run code coverage
-    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
+    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'Linux stable'))
   - script: bash <(curl -s https://codecov.io/bash)
     env:
       CODECOV_TOKEN: $(CODECOV_TOKEN_SECRET)
     displayName: Publish to codecov.io
-    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
+    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'Linux stable'))
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: 'cobertura'
       summaryFileLocation: $(System.DefaultWorkingDirectory)/**/coverageReport/kcov-merged/cobertura.xml
       reportDirectory: $(System.DefaultWorkingDirectory)/**/coverageReport/kcov-merged
-    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'nightly'))
+    condition: and(eq(variables['Agent.OS'], 'Linux'), eq(variables['Agent.JobName'], 'Linux stable'))

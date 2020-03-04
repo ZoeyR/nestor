@@ -1,6 +1,6 @@
 use crate::database::Db;
 
-use failure::Error;
+use anyhow::Result;
 use nestor::command;
 use nestor::handler::Command;
 use nestor::request::State;
@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 
 #[command("qotd")]
-pub fn qotd(command: &Command, db: State<Db>) -> Result<String, Error> {
+pub fn qotd(command: &Command, db: State<Db>) -> Result<String> {
     let mut rng = thread_rng();
 
     Ok(match command.arguments.len() {

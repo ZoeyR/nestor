@@ -2,17 +2,13 @@ use crate::config::{is_admin, RustybotSettings};
 use crate::database::models::FactoidEnum;
 use crate::database::Db;
 
-use failure::Error;
+use anyhow::Result;
 use nestor::command;
 use nestor::handler::Command;
 use nestor::request::State;
 
 #[command("forget")]
-pub fn forget(
-    command: &Command,
-    config: State<RustybotSettings>,
-    db: State<Db>,
-) -> Result<String, Error> {
+pub fn forget(command: &Command, config: State<RustybotSettings>, db: State<Db>) -> Result<String> {
     if command.arguments.is_empty() {
         return Ok("Invalid command format, please use ~forget <factoid>".into());
     }

@@ -1,12 +1,12 @@
 use crate::database::Db;
 
-use failure::Error;
+use anyhow::Result;
 use nestor::command;
 use nestor::handler::Command;
 use nestor::request::State;
 
 #[command("factoid-metadata")]
-fn metadata(command: &Command, db: State<Db>) -> Result<String, Error> {
+fn metadata(command: &Command, db: State<Db>) -> Result<String> {
     let factoid = command.arguments.join(" ");
 
     Ok(match db.get_factoid(&factoid)? {

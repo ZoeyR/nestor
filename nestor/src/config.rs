@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use failure::Error;
+use anyhow::Result;
 use irc::client::data::Config as IrcConfig;
 use serde::Deserialize;
 
@@ -21,7 +21,7 @@ pub struct NestorSettings {
 }
 
 impl Config {
-    pub fn load(path: impl AsRef<Path>) -> Result<Self, Error> {
+    pub fn load(path: impl AsRef<Path>) -> Result<Self> {
         // Load entries via serde
         let conf = fs::read_to_string(path.as_ref())?;
         let conf: Config = toml::de::from_str(&conf)?;
